@@ -1,11 +1,11 @@
 // src/features/onboarding/components/OnboardingWizard.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useToast } from '@/components/ui/Toast'
-import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter } from '@/components/ui/modal'
-import { useForm, FormProvider, FieldErrors } from 'react-hook-form';
-import { onboardingSchema, OnboardingFormData, businessOwnerSchema, influencerSchema, type BusinessOwnerFormData, type InfluencerFormData, mapInfluencerToBrandPayload } from '@/lib/validations/onboarding';
+import React, { useEffect, useRef, useState } from 'react';
+import { useToast } from '@/components/ui/Toast';
+import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter } from '@/components/ui/modal';
+import { useForm, FormProvider } from 'react-hook-form';
+import { type BusinessOwnerFormData, type InfluencerFormData, mapInfluencerToBrandPayload } from '@/lib/validations/onboarding';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from './ProgressBar';
 import { Step1_Welcome } from './Step1_Welcome';
@@ -19,6 +19,8 @@ import { Influencer_Step3_StyleAndGoals } from './Influencer_Step3_StyleAndGoals
 import { Business_Step3_TargetAudience } from './Business_Step3_TargetAudience';
 import { useRouter } from 'next/navigation';
 
+type WizardFormValues = Partial<BusinessOwnerFormData> & Partial<InfluencerFormData>;
+
 export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [userType, setUserType] = useState<'business' | 'influencer' | null>(null);
@@ -27,54 +29,49 @@ export default function OnboardingWizard() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-
-  // Safely initialize toast hook with error handling
-  let toast: any;
-  try {
-    const toastHook = useToast();
-    toast = toastHook.toast;
-  } catch (error) {
-    console.error('Failed to initialize toast:', error);
-    toast = () => {}; // Fallback no-op function
-  }
+  const { toast } = useToast();
 
   const TOTAL_STEPS = 6; // Select Type, Welcome, Profile, Target Audience/Platform, Voice/Style & Rules, Goals
-  
+
   // Check if user already has a type, but don't auto-advance past selection
+  const hasFetchedStatus = useRef(false);
+
   useEffect(() => {
+    if (hasFetchedStatus.current) return;
+    hasFetchedStatus.current = true;
+
     (async () => {
       try {
-        const res = await fetch('/api/user/status', { cache: 'no-store' })
+        const res = await fetch('/api/user/status', { cache: 'no-store' });
         if (res.ok) {
-          const j = await res.json()
+          const j = await res.json();
           // If user has completed onboarding, redirect to dashboard
           if (j?.hasCompletedOnboarding) {
-            router.push('/dashboard')
-            return
+            router.push('/dashboard');
+            return;
           }
           // If user has a type but hasn't completed onboarding, prefill but stay on selection
           if (j?.userType === 'business' || j?.userType === 'influencer') {
-            setUserType(j.userType)
+            setUserType(j.userType);
             // Don't auto-advance - let them confirm their choice
           }
         }
       } catch (error) {
-        console.log('User status API call failed (expected in development):', error)
+        console.log('User status API call failed (expected in development):', error);
+      } finally {
+        setIsInitialized(true);
       }
-      finally {
-        setIsInitialized(true)
-      }
-    })()
-  }, [])
+    })();
+  }, [router]);
 
   // We initialize RHF without a resolver since we handle manual step-by-step validation
-  const methods = useForm<any>({
+  const methods = useForm<WizardFormValues>({
     // No resolver - we do manual validation per step
-    mode: "onChange", // Show validation errors as user types
+    mode: 'onChange', // Show validation errors as user types
     shouldUnregister: false,
   });
 
-  const { trigger, handleSubmit } = methods;
+  const { handleSubmit } = methods;
 
   const handleNext = async () => {
     if (step === 0) {
@@ -95,7 +92,6 @@ export default function OnboardingWizard() {
     }
     
     // Step-by-step validation for remaining steps
-    let isValid = true
     const values = methods.getValues()
     
     if (userType === 'influencer') {
@@ -194,16 +190,16 @@ export default function OnboardingWizard() {
       setStep(step + 1)
     } else {
       // Final step - submit the form
-      await handleSubmit(onSubmit)()
+      await handleSubmit(onSubmit)();
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: WizardFormValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      let payload;
+      let payload: BusinessOwnerFormData | ReturnType<typeof mapInfluencerToBrandPayload>;
       if (userType === 'influencer') {
         payload = mapInfluencerToBrandPayload(data as InfluencerFormData);
       } else {
@@ -223,9 +219,15 @@ export default function OnboardingWizard() {
 
       // Success - redirect to dashboard
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Onboarding submission error:', error);
-      setError(error.message || 'An unexpected error occurred. Please try again.');
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      setError(message);
+      toast({
+        variant: 'error',
+        title: 'Unable to complete onboarding',
+        description: message,
+      });
     } finally {
       setIsLoading(false);
     }

@@ -18,7 +18,6 @@ export const Step2_BrandProfileForm = () => {
   // Runtime sanity checks to help debug undefined imports that cause "reading 'call'" errors.
   if (!register) {
     // This will show up in server/browser logs and point to the real missing value.
-    // eslint-disable-next-line no-console
     console.error('[Step2_BrandProfileForm] react-hook-form register is undefined')
   }
 
