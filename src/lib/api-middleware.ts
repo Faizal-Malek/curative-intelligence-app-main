@@ -17,7 +17,7 @@ export interface AuthenticatedUser {
 
 export interface ApiContext {
   user?: AuthenticatedUser;
-  params?: Record<string, string>;
+  params?: Record<string, string | string[] | undefined>;
   searchParams?: URLSearchParams;
   body?: any;
 }
@@ -50,15 +50,21 @@ export function withApiMiddleware(
 ) {
   return async (
     request: NextRequest,
-    routeContext?: { params: Record<string, string> }
+    routeContext?: {
+      params?: Promise<Record<string, string | string[] | undefined>>;
+    }
   ): Promise<NextResponse> => {
     const requestId = crypto.randomUUID();
     const startTime = Date.now();
     
     try {
       // Initialize context
+      const rawParams = routeContext?.params
+        ? await routeContext.params
+        : undefined;
+
       const context: ApiContext = {
-        params: routeContext?.params,
+        params: rawParams,
         searchParams: new URL(request.url).searchParams,
       };
 

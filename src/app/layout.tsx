@@ -1,6 +1,5 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
 import localFont from "next/font/local"; // Use localFont for custom fonts
 import "./globals.css";
 import { ToastProvider } from '@/components/ui/Toast'
@@ -11,12 +10,6 @@ import { cn } from "@/lib/utils";
 // 'Montserrat' will be our main UI font (we'll call it --font-sans).
 // 'Floreal' will be our special display font for headings (we'll call it --font-display).
 // We load them as CSS variables so we can easily use them in Tailwind CSS.
-
-//  Load Montserrat from Google Fonts
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-sans", // This will be our main UI font
-});
 
 //  Load Floreal from a local file
 const floreal = localFont({
@@ -37,14 +30,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-        <body suppressHydrationWarning
+        <body
+          suppressHydrationWarning
           //  We apply both font variables to the body.
           // We also add 'antialiased' for smoother text rendering.
           className={cn(
             "min-h-screen bg-[#FBFAF8] font-sans antialiased",
-            montserrat.variable,
             floreal.variable
           )}
+          style={{
+            ["--font-sans" as const]: '"Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif',
+          }}
         >
           <div className="relative min-h-screen w-full overflow-x-hidden">
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
