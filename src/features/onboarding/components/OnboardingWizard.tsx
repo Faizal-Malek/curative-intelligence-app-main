@@ -1,23 +1,26 @@
 // src/features/onboarding/components/OnboardingWizard.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useToast } from '@/components/ui/Toast'
-import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter } from '@/components/ui/modal'
-import { useForm, FormProvider, FieldErrors } from 'react-hook-form';
-import { onboardingSchema, OnboardingFormData, businessOwnerSchema, influencerSchema, type BusinessOwnerFormData, type InfluencerFormData, mapInfluencerToBrandPayload } from '@/lib/validations/onboarding';
-import { Button } from '@/components/ui/button';
-import { ProgressBar } from './ProgressBar';
-import { Step1_Welcome } from './Step1_Welcome';
-import { Step2_BrandProfileForm } from './Step2_BrandProfileForm';
-import { Step3_BrandVoiceRules } from './Step3_BrandVoiceRules';
-import { Step3_SetGoals } from './Step3_SetGoals';
-import { Step0_SelectUserType } from './Step0_SelectUserType';
-import { Influencer_Step2_Profile } from './Influencer_Step2_Profile';
-import { Influencer_Step3_AudienceAndPlatforms } from './Influencer_Step3_AudienceAndPlatforms';
-import { Influencer_Step3_StyleAndGoals } from './Influencer_Step3_StyleAndGoals';
-import { Business_Step3_TargetAudience } from './Business_Step3_TargetAudience';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/Toast"
+import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter } from "@/components/ui/modal"
+import { useForm, FormProvider } from "react-hook-form";
+import { type BusinessOwnerFormData, type InfluencerFormData, mapInfluencerToBrandPayload } from "@/lib/validations/onboarding";
+import { Button } from "@/components/ui/button";
+import { ProgressBar } from "./ProgressBar";
+import { Step1_Welcome } from "./Step1_Welcome";
+import { Step2_BrandProfileForm } from "./Step2_BrandProfileForm";
+import { Step3_BrandVoiceRules } from "./Step3_BrandVoiceRules";
+import { Step3_SetGoals } from "./Step3_SetGoals";
+import { Step0_SelectUserType } from "./Step0_SelectUserType";
+import { Influencer_Step2_Profile } from "./Influencer_Step2_Profile";
+import { Influencer_Step3_AudienceAndPlatforms } from "./Influencer_Step3_AudienceAndPlatforms";
+import { Influencer_Step3_StyleAndGoals } from "./Influencer_Step3_StyleAndGoals";
+import { Business_Step3_TargetAudience } from "./Business_Step3_TargetAudience";
+import { useRouter } from "next/navigation";
+
+type WizardFormValues = Partial<BusinessOwnerFormData> & Partial<InfluencerFormData>;
+type ToastFunction = ReturnType<typeof useToast>["toast"];
 
 export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
@@ -29,13 +32,13 @@ export default function OnboardingWizard() {
   const router = useRouter();
 
   // Safely initialize toast hook with error handling
-  let toast: any;
+  let toast: ToastFunction;
   try {
     const toastHook = useToast();
     toast = toastHook.toast;
   } catch (error) {
-    console.error('Failed to initialize toast:', error);
-    toast = () => {}; // Fallback no-op function
+    console.error("Failed to initialize toast:", error);
+    toast = () => ""; // Fallback no-op function that returns a string ID
   }
 
   const TOTAL_STEPS = 6; // Select Type, Welcome, Profile, Target Audience/Platform, Voice/Style & Rules, Goals
@@ -65,16 +68,16 @@ export default function OnboardingWizard() {
         setIsInitialized(true)
       }
     })()
-  }, [])
+  }, [router])
 
   // We initialize RHF without a resolver since we handle manual step-by-step validation
-  const methods = useForm<any>({
+  const methods = useForm<WizardFormValues>({
     // No resolver - we do manual validation per step
     mode: "onChange", // Show validation errors as user types
     shouldUnregister: false,
   });
 
-  const { trigger, handleSubmit } = methods;
+  const { handleSubmit } = methods;
 
   const handleNext = async () => {
     if (step === 0) {
@@ -95,7 +98,6 @@ export default function OnboardingWizard() {
     }
     
     // Step-by-step validation for remaining steps
-    let isValid = true
     const values = methods.getValues()
     
     if (userType === 'influencer') {
@@ -198,12 +200,12 @@ export default function OnboardingWizard() {
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: WizardFormValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      let payload;
+      let payload: BusinessOwnerFormData | ReturnType<typeof mapInfluencerToBrandPayload>;
       if (userType === 'influencer') {
         payload = mapInfluencerToBrandPayload(data as InfluencerFormData);
       } else {
@@ -223,9 +225,15 @@ export default function OnboardingWizard() {
 
       // Success - redirect to dashboard
       router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Onboarding submission error:', error);
-      setError(error.message || 'An unexpected error occurred. Please try again.');
+    } catch (error: unknown) {
+      console.error("Onboarding submission error:", error);
+      const message = error instanceof Error ? error.message : "An unexpected error occurred. Please try again.";
+      setError(message);
+      toast({
+        variant: "error",
+        title: "Unable to complete onboarding",
+        description: message,
+      });
     } finally {
       setIsLoading(false);
     }
