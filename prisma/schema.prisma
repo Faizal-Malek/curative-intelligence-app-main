@@ -1,0 +1,211 @@
+// File Path: prisma/schema.prisma
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// --- Models ---
+
+model User {
+  id                      String    @id @default(uuid())
+  clerkId                 String    @unique
+  email                   String    @unique
+  firstName               String?
+  lastName                String?
+  imageUrl                String?
+  plan                    String    @default("free")
+  userType                String    @default("business")
+
+  onboardingComplete      Boolean   @default(false)
+  hasGeneratedFirstBatch  Boolean   @default(false)
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  brandProfile            BrandProfile?
+  influencerProfile       InfluencerProfile?
+  posts                   Post[]
+  generationBatches       GenerationBatch[]
+  reminders               Reminder[]
+  socialMediaAccounts     SocialMediaAccount[]
+}
+
+// FINALIZED MODEL: This is the single source of truth for the brand profile.
+model BrandProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  // Core brand identity fields
+  brandName             String
+  industry              String
+  brandDescription      String
+  brandVoiceDescription String
+  primaryGoal           String
+  doRules               String?
+  dontRules             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  
+  batchId   String?
+  batch     GenerationBatch? @relation(fields: [batchId], references: [id])
+
+  content   String
+  status    PostStatus @default(AWAITING_REVIEW)
+  mediaUrl  String?
+
+  likes     Int        @default(0)
+  comments  Int        @default(0)
+  reach     Int        @default(0)
+
+  scheduledAt DateTime?
+  postedAt    DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model GenerationBatch {
+  id      String        @id @default(uuid())
+  userId  String
+  user    User          @relation(fields: [userId], references: [id])
+  
+  status  BatchStatus   @default(PENDING)
+  posts   Post[]
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model JobQueue {
+  id        String   @id @default(uuid())
+  type      String
+  payload   Json
+  status    String   @default("pending")
+  attempts  Int      @default(0)
+  result    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InfluencerProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  displayName   String
+  niche         String
+  bio           String
+  contentStyle  String
+  doRules       String?
+  dontRules     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Reminder {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  category    String   @default("reminder")
+  startsAt    DateTime
+  endsAt      DateTime?
+  allDay      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SocialMediaAccount {
+  id            String              @id @default(uuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id])
+  platform      SocialMediaPlatform
+  platformUserId String
+  username      String?
+  displayName   String?
+  profileImage  String?
+  accessToken   String              // Should be encrypted in production
+  refreshToken  String?             // For platforms that support refresh tokens
+  tokenExpiresAt DateTime?
+  isActive      Boolean             @default(true)
+  lastSync      DateTime?
+  followerCount Int?
+  pageId        String?             // For Facebook Pages
+  
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  
+  analytics     SocialMediaAnalytics[]
+  
+  @@unique([userId, platform])
+}
+
+model SocialMediaAnalytics {
+  id            String              @id @default(uuid())
+  accountId     String
+  account       SocialMediaAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  // Analytics metrics
+  followers     Int                 @default(0)
+  following     Int                 @default(0)
+  posts         Int                 @default(0)
+  engagement    Float               @default(0)
+  reach         Int                 @default(0)
+  impressions   Int                 @default(0)
+  
+  // Period data (daily, weekly, monthly snapshots)
+  period        AnalyticsPeriod     @default(DAILY)
+  date          DateTime
+  
+  createdAt     DateTime            @default(now())
+  
+  @@unique([accountId, period, date])
+}
+
+
+// --- Enums ---
+
+enum PostStatus {
+  AWAITING_REVIEW
+  IDEA_APPROVED
+  AWAITING_MEDIA
+  READY_TO_SCHEDULE
+  SCHEDULED
+  POSTED
+  FAILED
+}
+
+enum BatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SocialMediaPlatform {
+  INSTAGRAM
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+  TIKTOK
+  YOUTUBE
+}
+
+enum AnalyticsPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
