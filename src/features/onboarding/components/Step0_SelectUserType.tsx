@@ -1,16 +1,22 @@
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Building2, Users, ArrowRight, Sparkles } from 'lucide-react';
+import {
+  Building2,
+  Users,
+  ArrowRight,
+  Sparkles,
+  CheckCircle2,
+} from 'lucide-react';
 
 const CARD_BASE_CLASSES =
-  'group relative isolate overflow-hidden rounded-3xl border-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D2B193]/40';
+  'group relative isolate flex min-h-[420px] flex-col overflow-hidden rounded-3xl border-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D2B193]/45';
 
 const CARD_SELECTED_CLASSES =
-  'border-[#3A2F2F] bg-gradient-to-br from-white via-[#F7F0E5] to-[#E7D5C1] shadow-[0_30px_70px_rgba(58,47,47,0.24)]';
+  'border-[#3A2F2F] bg-gradient-to-br from-white via-[#F9F2E7] to-[#EBDCC7] shadow-[0_32px_80px_rgba(58,47,47,0.26)]';
 
 const CARD_IDLE_CLASSES =
-  'border-[#EFE8D8] bg-white/85 shadow-[0_18px_40px_rgba(58,47,47,0.12)] hover:-translate-y-1 hover:border-[#D2B193] hover:shadow-[0_26px_60px_rgba(58,47,47,0.18)]';
+  'border-transparent bg-white/90 shadow-[0_20px_45px_rgba(58,47,47,0.12)] hover:-translate-y-1 hover:border-[#D2B193] hover:bg-white hover:shadow-[0_28px_70px_rgba(58,47,47,0.2)]';
 
 type UserTypeOption = 'business' | 'influencer';
 
@@ -64,19 +70,19 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-none flex-col gap-12 px-2 sm:px-0">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-2 sm:px-0">
       <header className="space-y-4 text-left">
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/70 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
         </span>
-        <h1 className="font-display text-4xl leading-tight text-[#3A2F2F] sm:text-5xl">Welcome to Curative</h1>
-        <p className="max-w-2xl text-lg leading-relaxed text-[#6F5F5F] sm:text-xl">
+        <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Welcome to Curative</h1>
+        <p className="max-w-3xl text-lg leading-relaxed text-[#5E4E4E] sm:text-xl">
           Tell us how you&apos;ll be using Curative so we can tailor strategies, recommendations, and dashboards to your goals.
         </p>
       </header>
 
       <div
-        className="grid gap-5 lg:gap-7 xl:gap-8 sm:grid-cols-2"
+        className="grid gap-6 sm:grid-cols-2 xl:gap-8"
         role="radiogroup"
         aria-label="Select how you'll be using Curative"
       >
@@ -98,53 +104,43 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
                 }
               }}
             >
-              <CardContent className="relative z-10 flex h-full flex-col gap-8 p-8 text-left sm:p-10 lg:flex-row lg:items-start lg:gap-12">
-                <div className="flex max-w-xl flex-1 flex-col gap-6">
+              <CardContent className="relative z-10 flex h-full flex-col justify-between gap-8 p-8 text-left sm:p-10">
+                <div className="flex flex-col gap-6">
                   <div className="flex flex-wrap items-center gap-4">
                     <span
                       className={`inline-flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                         isSelected
-                          ? 'border-[#3A2F2F] bg-[#3A2F2F] text-white'
-                          : 'border-[#D2B193]/70 bg-white/80 text-[#3A2F2F] group-hover:border-[#3A2F2F]'
+                          ? 'border-[#2F2626] bg-[#2F2626] text-white'
+                          : 'border-[#D2B193]/80 bg-white/90 text-[#2F2626] group-hover:border-[#2F2626]'
                       }`}
                     >
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F3E6D6] text-[#3A2F2F] shadow-inner">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </span>
                       {label}
                     </span>
                     {isSelected && (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-[#3A2F2F] px-4 py-2 text-sm font-semibold text-white shadow-lg">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-[#2F2626] px-4 py-2 text-sm font-semibold text-white shadow-lg">
                         ✓ Selected
                       </span>
                     )}
                   </div>
 
-                  <p className="text-base leading-relaxed text-[#584949] sm:text-lg">{summary}</p>
-
-                  <div className="hidden rounded-2xl border border-[#E6D7C4] bg-white/85 p-4 text-sm text-[#5E5151] shadow-[0_12px_32px_rgba(58,47,47,0.08)] lg:block">
-                    {isSelected ? (
-                      <p className="font-semibold text-[#3A2F2F]">We&apos;ll tailor prompts, dashboards, and quick-start tasks for this journey.</p>
-                    ) : (
-                      <p>Preview what you&apos;ll capture in this flow on the right. Selecting an option highlights the next best step.</p>
-                    )}
-                  </div>
+                  <p className="max-w-xl text-base leading-relaxed text-[#4D3F3F] sm:text-lg">{summary}</p>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-4 rounded-3xl border border-[#E6D7C4]/80 bg-white/85 p-6 shadow-[0_18px_40px_rgba(58,47,47,0.12)]">
-                  <div className="flex items-center justify-between gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#B89B7B]">
+                <div className="flex flex-col gap-4 rounded-3xl border border-[#E4D8C6] bg-white/90 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
+                  <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B] sm:text-sm">
                     <span>What you&apos;ll capture</span>
                     <ArrowRight className="h-4 w-4 text-[#D2B193]" aria-hidden="true" />
                   </div>
-                  <ul className="grid gap-3 text-sm leading-relaxed text-[#5E5151] sm:text-base">
+                  <ul className="grid gap-3 text-sm leading-relaxed text-[#4D3F3F] sm:text-base">
                     {bullets.map((item) => (
-                      <li key={item} className="flex items-start gap-3 rounded-2xl border border-transparent bg-white p-4 shadow-sm transition group-hover:border-[#D2B193]/50">
-                        <span
-                          className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#F3E6D6] text-[#3A2F2F]"
-                          aria-hidden="true"
-                        >
-                          •
-                        </span>
+                      <li
+                        key={item}
+                        className="flex items-start gap-3 rounded-2xl border border-transparent bg-white/95 p-4 shadow-sm transition group-hover:border-[#D2B193]/60"
+                      >
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#D2B193]" aria-hidden="true" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -156,7 +152,7 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 aria-hidden="true"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/30" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/30" />
                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#D2B193]/25 via-transparent to-transparent" />
               </div>
             </Card>
@@ -164,12 +160,12 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
         })}
       </div>
 
-      <footer className="max-w-xl space-y-4 text-sm leading-relaxed text-[#5E5151] sm:text-base">
+      <footer className="max-w-2xl space-y-4 text-sm leading-relaxed text-[#4D3F3F] sm:text-base">
         <p>
           You can adjust this later in settings. We use your selection to personalise templates, insights, and the journey ahead.
         </p>
         {value && (
-          <p className="inline-flex items-center gap-2 rounded-full bg-[#EFE8D8]/80 px-4 py-2 text-sm font-semibold text-[#3A2F2F]">
+          <p className="inline-flex items-center gap-2 rounded-full bg-[#EFE3D1]/85 px-4 py-2 text-sm font-semibold text-[#2F2626]">
             Great choice! Preparing the {value === 'business' ? 'business' : 'creator'} flow…
           </p>
         )}
