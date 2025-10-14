@@ -78,17 +78,24 @@ export function Step0_SelectUserType({
   ];
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-12 px-4 pb-16 pt-6 sm:px-6">
-      <div className="flex justify-center">
-        <ol className="relative flex w-full max-w-4xl items-center justify-between gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-[#B89B7B]">
+    <section className="relative isolate overflow-hidden rounded-[40px] border border-[#F0E5D4] bg-[#FDF8F0]/90 px-4 py-10 shadow-[0_32px_120px_rgba(61,47,34,0.18)] sm:px-6 lg:px-12">
+      <div className="pointer-events-none absolute inset-x-6 inset-y-8 -z-10 rounded-[36px] bg-gradient-to-br from-white/70 via-[#FBF1E2]/80 to-[#F1DCC1]/60 blur-0" aria-hidden="true" />
+
+      <div className="mx-auto w-full max-w-6xl space-y-12">
+        <div className="flex justify-center">
+          <div className="relative w-full max-w-4xl">
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 hidden -translate-y-1/2 border-t border-[#E6D8C4] sm:block" aria-hidden="true" />
+            <ol
+              className="relative flex items-center gap-3 overflow-x-auto rounded-full border border-[#E6D8C4] bg-white/80 px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-[#B89B7B] shadow-[0_18px_50px_rgba(58,47,47,0.12)] sm:justify-between sm:gap-6 sm:px-8"
+            >
           {PROGRESS_STEPS.map((step, index) => {
             const isActive = index === 0;
 
             return (
-              <li key={step} className="flex flex-1 flex-col items-center gap-2">
+                  <li key={step} className="flex flex-shrink-0 flex-col items-center gap-2 text-center sm:flex-1">
                 <span
                   className={cn(
-                    'flex h-11 w-11 items-center justify-center rounded-full border text-xs transition-colors duration-200',
+                        'flex h-11 w-11 items-center justify-center rounded-full border text-xs transition-colors duration-200',
                     isActive
                       ? 'border-[#2F2626] bg-[#2F2626] text-white shadow-[0_12px_30px_rgba(47,38,38,0.3)]'
                       : 'border-[#E6D8C4] bg-white/90 text-[#B89B7B] shadow-[0_10px_24px_rgba(58,47,47,0.08)]'
@@ -100,36 +107,40 @@ export function Step0_SelectUserType({
               </li>
             );
           })}
-          <div className="pointer-events-none absolute left-[8%] right-[8%] top-5 -z-10 h-px bg-gradient-to-r from-transparent via-[#E6D8C4] to-transparent" aria-hidden="true" />
-        </ol>
-      </div>
+            </ol>
+          </div>
+        </div>
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:gap-16">
-        <section className="space-y-10">
-          <header className="space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
-            </span>
-            <div className="space-y-4">
-              <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Choose your journey</h1>
-              <p className="max-w-2xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
-                Pick the option that reflects how you plan to use Curative. We&apos;ll tailor each step to surface the most relevant strategy, messaging, and insights for your team.
-              </p>
-            </div>
-          </header>
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,3.2fr)_minmax(0,1.8fr)] xl:gap-16">
+          <div className="space-y-10">
+            <header className="space-y-5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
+              </span>
+              <div className="space-y-4">
+                <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Choose your journey</h1>
+                <p className="max-w-2xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
+                  Pick the option that reflects how you plan to use Curative. We&apos;ll tailor each step to surface the most relevant strategy, messaging, and insights for your team.
+                </p>
+              </div>
+            </header>
 
-          <div
-            className="grid gap-8 md:grid-cols-2"
-            role="radiogroup"
-            aria-label="Select how you'll be using Curative"
-          >
+            <div
+              className="grid gap-6 md:grid-cols-2"
+              role="radiogroup"
+              aria-label="Select how you'll be using Curative"
+            >
             {cards.map(({ id, label, icon: Icon, summary, bullets }) => {
               const isSelected = value === id;
 
               return (
                 <Card
                   key={id}
-                  className={`${CARD_BASE_CLASSES} ${isSelected ? CARD_SELECTED_CLASSES : CARD_IDLE_CLASSES}`}
+                    className={cn(
+                      CARD_BASE_CLASSES,
+                      'md:min-h-[480px] xl:min-h-[520px]',
+                      isSelected ? CARD_SELECTED_CLASSES : CARD_IDLE_CLASSES
+                    )}
                   role="radio"
                   aria-checked={isSelected}
                   tabIndex={0}
@@ -141,109 +152,111 @@ export function Step0_SelectUserType({
                     }
                   }}
                 >
-                  <CardContent className="relative z-10 flex h-full flex-col gap-8 p-8 text-left sm:p-9">
-                    <div className="space-y-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
-                            <Icon className="h-6 w-6" aria-hidden="true" />
-                          </span>
-                          <div className="space-y-1">
-                            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Tailored journey</p>
-                            <h2 className="text-2xl font-semibold text-[#2F2626] sm:text-[1.7rem]">{label}</h2>
+                    <CardContent className="relative z-10 flex h-full flex-col justify-between gap-8 p-7 text-left sm:p-9">
+                      <div className="space-y-6">
+                        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex items-start gap-4">
+                            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F3E6D6] text-[#2F2626] shadow-inner">
+                              <Icon className="h-6 w-6" aria-hidden="true" />
+                            </span>
+                            <div className="space-y-1">
+                              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Tailored journey</p>
+                              <h2 className="text-2xl font-semibold text-[#2F2626] sm:text-[1.7rem]">{label}</h2>
+                            </div>
                           </div>
-                        </div>
-                        {isSelected ? (
-                          <span className="inline-flex items-center gap-2 rounded-full bg-[#2F2626] px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-white shadow-lg">
-                            Selected
-                          </span>
-                        ) : (
-                          <span className="hidden rounded-full border border-[#E6D8C4] px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#B89B7B] sm:inline-flex">
-                            Preview journey
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-base leading-relaxed text-[#4D3F3F] sm:text-[1.05rem]">{summary}</p>
-                    </div>
-
-                    <div className="flex flex-col gap-4 rounded-[24px] border border-[#E9DCC9] bg-white/95 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
-                      <div className="flex items-center justify-between gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-[#B89B7B] sm:text-sm">
-                        <span>What you&apos;ll capture</span>
-                        <ArrowRight className="h-4 w-4 text-[#D2B193]" aria-hidden="true" />
-                      </div>
-                      <ul className="grid gap-3 text-sm leading-relaxed text-[#4D3F3F] sm:text-base">
-                        {bullets.map((item) => (
-                          <li
-                            key={item}
-                            className="flex items-start gap-3 rounded-2xl border border-transparent bg-white p-4 shadow-sm transition group-hover:border-[#D2B193]/45"
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-2 rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.3em] transition-colors sm:self-start',
+                              isSelected
+                                ? 'bg-[#2F2626] text-white shadow-lg'
+                                : 'border border-[#E6D8C4] text-[#B89B7B]'
+                            )}
                           >
-                            <ArrowUpRight className="mt-0.5 h-5 w-5 text-[#D2B193]" aria-hidden="true" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
+                            {isSelected ? 'Selected' : 'Preview journey'}
+                          </span>
+                        </div>
 
-                  <div
-                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    aria-hidden="true"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/30" />
-                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#D2B193]/25 via-transparent to-transparent" />
-                  </div>
+                        <p className="text-base leading-relaxed text-[#4D3F3F] sm:text-[1.05rem]">{summary}</p>
+                      </div>
+
+                      <div className="flex flex-col gap-4 rounded-[24px] border border-[#E9DCC9] bg-white/95 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
+                        <div className="flex items-center justify-between gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-[#B89B7B] sm:text-sm">
+                          <span>What you&apos;ll capture</span>
+                          <ArrowRight className="h-4 w-4 text-[#D2B193]" aria-hidden="true" />
+                        </div>
+                        <ul className="grid gap-3 text-sm leading-relaxed text-[#4D3F3F] sm:text-base">
+                          {bullets.map((item) => (
+                            <li
+                              key={item}
+                              className="flex items-start gap-3 rounded-2xl border border-transparent bg-white p-4 shadow-sm transition group-hover:border-[#D2B193]/45"
+                            >
+                              <ArrowUpRight className="mt-0.5 h-5 w-5 text-[#D2B193]" aria-hidden="true" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+
+                    <div
+                      className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      aria-hidden="true"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/12 to-white/30" />
+                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#D2B193]/25 via-transparent to-transparent" />
+                    </div>
                 </Card>
               );
             })}
-          </div>
+            </div>
 
-          <footer className="flex flex-col gap-4 rounded-[28px] border border-[#E6D8C4] bg-white/85 px-6 py-5 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_16px_36px_rgba(58,47,47,0.12)] sm:px-8 sm:text-base">
-            <p>
-              You can adjust this later in settings. Your pick helps us pre-fill templates, align recommendations, and surface the most relevant insights on your dashboard.
-            </p>
-            {value && (
-              <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EFE3D1] px-4 py-2 text-sm font-semibold text-[#2F2626]">
-                Great choice! Preparing the {value === 'business' ? 'business owner' : 'content creator'} experience…
+            <footer className="flex flex-col gap-4 rounded-[28px] border border-[#E6D8C4] bg-white/85 px-6 py-5 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_16px_36px_rgba(58,47,47,0.12)] sm:px-8 sm:text-base">
+              <p>
+                You can adjust this later in settings. Your pick helps us pre-fill templates, align recommendations, and surface the most relevant insights on your dashboard.
               </p>
-            )}
-          </footer>
-        </section>
-
-        <aside className="space-y-6">
-          <div className="rounded-[28px] border border-[#E6D8C4] bg-white/90 p-8 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_18px_48px_rgba(58,47,47,0.12)] sm:text-base">
-            <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Pro tip</p>
-            <h3 className="mt-4 text-2xl font-semibold text-[#2F2626]">Choose the journey that fits best</h3>
-            <p className="mt-3">
-              Not sure where to start? Pick the path that matches your current role. You can always update your selection from settings once you explore the workspace.
-            </p>
+              {value && (
+                <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EFE3D1] px-4 py-2 text-sm font-semibold text-[#2F2626]">
+                  Great choice! Preparing the {value === 'business' ? 'business owner' : 'content creator'} experience…
+                </p>
+              )}
+            </footer>
           </div>
 
-          <Card className="rounded-[28px] border-[#E6D8C4] bg-white/95 shadow-[0_20px_55px_rgba(58,47,47,0.14)]">
-            <CardContent className="space-y-5 p-8">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Checklist</p>
-                  <h3 className="mt-2 text-lg font-semibold text-[#2F2626]">What we&apos;ll capture together</h3>
+          <aside className="space-y-6">
+            <div className="rounded-[28px] border border-[#E6D8C4] bg-white/92 p-8 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_18px_48px_rgba(58,47,47,0.12)] sm:text-base">
+              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Pro tip</p>
+              <h3 className="mt-4 text-2xl font-semibold text-[#2F2626]">Choose the journey that fits best</h3>
+              <p className="mt-3">
+                Not sure where to start? Pick the path that matches your current role. You can always update your selection from settings once you explore the workspace.
+              </p>
+            </div>
+
+            <Card className="rounded-[28px] border-[#E6D8C4] bg-white/95 shadow-[0_20px_55px_rgba(58,47,47,0.14)]">
+              <CardContent className="space-y-5 p-8">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Checklist</p>
+                    <h3 className="mt-2 text-lg font-semibold text-[#2F2626]">What we&apos;ll capture together</h3>
+                  </div>
                 </div>
-              </div>
-              <ul className="space-y-4 text-sm text-[#4D3F3F] sm:text-base">
-                {[
-                  'Brand basics: name, mission, and differentiators',
-                  'Audience clarity: who you serve and how they engage',
-                  'Voice & tone guardrails to keep content on-brand',
-                  'Goals that anchor campaigns and recommendations',
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 rounded-2xl border border-[#F0E5D4] bg-white/90 p-4">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#3A2F2F]" aria-hidden="true" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </aside>
+                <ul className="space-y-4 text-sm text-[#4D3F3F] sm:text-base">
+                  {[
+                    'Brand basics: name, mission, and differentiators',
+                    'Audience clarity: who you serve and how they engage',
+                    'Voice & tone guardrails to keep content on-brand',
+                    'Goals that anchor campaigns and recommendations',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 rounded-2xl border border-[#F0E5D4] bg-white/90 p-4">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#3A2F2F]" aria-hidden="true" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
