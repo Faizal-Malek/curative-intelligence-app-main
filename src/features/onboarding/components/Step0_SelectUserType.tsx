@@ -1,31 +1,31 @@
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Building2,
-  Users,
-  ArrowRight,
-  Sparkles,
-  CheckCircle2,
-} from 'lucide-react';
-
-const CARD_BASE_CLASSES =
-  'group relative isolate flex min-h-[420px] flex-col overflow-hidden rounded-3xl border-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D2B193]/45';
-
-const CARD_SELECTED_CLASSES =
-  'border-[#3A2F2F] bg-gradient-to-br from-white via-[#F9F2E7] to-[#EBDCC7] shadow-[0_32px_80px_rgba(58,47,47,0.26)]';
-
-const CARD_IDLE_CLASSES =
-  'border-transparent bg-white/90 shadow-[0_20px_45px_rgba(58,47,47,0.12)] hover:-translate-y-1 hover:border-[#D2B193] hover:bg-white hover:shadow-[0_28px_70px_rgba(58,47,47,0.2)]';
+import { Building2, Users, Sparkles, ArrowRight, ArrowUpRight } from 'lucide-react';
 
 type UserTypeOption = 'business' | 'influencer';
 
-export function Step0_SelectUserType({ value, onSelect, onNext }: {
+const CARD_BASE_CLASSES =
+  'group relative isolate flex min-h-[440px] flex-col overflow-hidden rounded-[32px] border transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D2B193]/45';
+
+const CARD_SELECTED_CLASSES =
+  'border-[#3A2F2F] bg-gradient-to-br from-[#FEF9F3] via-[#F7EDDE] to-[#ECD9C0] shadow-[0_28px_70px_rgba(58,47,47,0.22)]';
+
+const CARD_IDLE_CLASSES =
+  'border-transparent bg-white/95 shadow-[0_22px_60px_rgba(58,47,47,0.14)] hover:-translate-y-1 hover:border-[#D2B193] hover:shadow-[0_32px_90px_rgba(58,47,47,0.24)]';
+
+const PROGRESS_STEPS = ['Type', 'Welcome', 'Profile', 'Audience', 'Style', 'Goals'];
+
+export function Step0_SelectUserType({
+  value,
+  onSelect,
+  onNext,
+}: {
   value: UserTypeOption | null;
   onSelect: (v: UserTypeOption) => void;
   onNext?: () => void;
 }) {
-  const handleSelect = (userType: 'business' | 'influencer') => {
+  const handleSelect = (userType: UserTypeOption) => {
     onSelect(userType);
     if (onNext) {
       window.setTimeout(() => {
@@ -70,19 +70,53 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-2 sm:px-0">
-      <header className="space-y-4 text-left">
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
-          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
-        </span>
-        <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Welcome to Curative</h1>
-        <p className="max-w-3xl text-lg leading-relaxed text-[#5E4E4E] sm:text-xl">
-          Tell us how you&apos;ll be using Curative so we can tailor strategies, recommendations, and dashboards to your goals.
-        </p>
-      </header>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-16 pt-6 sm:px-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-center">
+          <ol className="grid w-full max-w-3xl grid-cols-6 gap-3 text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B]">
+            {PROGRESS_STEPS.map((step, index) => {
+              const isActive = index === 0;
+
+              return (
+                <li
+                  key={step}
+                  className={`flex flex-col items-center gap-2 rounded-full px-3 py-2 text-center transition ${
+                    isActive
+                      ? 'bg-[#2F2626] text-white shadow-[0_10px_30px_rgba(47,38,38,0.28)]'
+                      : 'bg-white/90 text-[#B89B7B] shadow-[0_12px_30px_rgba(58,47,47,0.08)]'
+                  }`}
+                >
+                  <span className="text-[0.65rem] tracking-[0.4em]">{index + 1}</span>
+                  <span className="text-[0.55rem] tracking-[0.32em]">{step}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        <header className="space-y-4 text-center sm:text-left">
+          <span className="inline-flex items-center gap-2 self-start rounded-full border border-white/60 bg-white/80 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
+          </span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-3 text-left">
+              <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Welcome to Curative</h1>
+              <p className="max-w-2xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
+                Choose the path that best describes your goals. We&apos;ll tailor strategies, templates, and insights so your dashboard feels built just for you.
+              </p>
+            </div>
+            <div className="hidden rounded-3xl border border-[#E6D8C4] bg-white/90 px-5 py-4 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_18px_40px_rgba(58,47,47,0.12)] md:block">
+              <p className="font-semibold text-[#2F2626]">Here&apos;s what to expect:</p>
+              <p className="mt-2">
+                5 quick sections to capture your brand, tone, and goals. You can always update everything later from settings.
+              </p>
+            </div>
+          </div>
+        </header>
+      </div>
 
       <div
-        className="grid gap-6 sm:grid-cols-2 xl:gap-8"
+        className="grid gap-8 sm:grid-cols-2 xl:gap-10"
         role="radiogroup"
         aria-label="Select how you'll be using Curative"
       >
@@ -104,24 +138,25 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
                 }
               }}
             >
-              <CardContent className="relative z-10 flex h-full flex-col justify-between gap-8 p-8 text-left sm:p-10">
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <span
-                      className={`inline-flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                        isSelected
-                          ? 'border-[#2F2626] bg-[#2F2626] text-white'
-                          : 'border-[#D2B193]/80 bg-white/90 text-[#2F2626] group-hover:border-[#2F2626]'
-                      }`}
-                    >
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
-                        <Icon className="h-5 w-5" aria-hidden="true" />
+              <CardContent className="relative z-10 flex h-full flex-col gap-10 p-8 text-left sm:p-10">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
+                        <Icon className="h-6 w-6" aria-hidden="true" />
                       </span>
-                      {label}
-                    </span>
-                    {isSelected && (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-[#2F2626] px-4 py-2 text-sm font-semibold text-white shadow-lg">
-                        ✓ Selected
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Tailored journey</p>
+                        <h2 className="text-2xl font-semibold text-[#2F2626] sm:text-[1.65rem]">{label}</h2>
+                      </div>
+                    </div>
+                    {isSelected ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-[#2F2626] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-lg">
+                        Selected
+                      </span>
+                    ) : (
+                      <span className="hidden rounded-full border border-[#E6D8C4] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#B89B7B] sm:inline-flex">
+                        Tap to preview
                       </span>
                     )}
                   </div>
@@ -129,7 +164,7 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
                   <p className="max-w-xl text-base leading-relaxed text-[#4D3F3F] sm:text-lg">{summary}</p>
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-3xl border border-[#E4D8C6] bg-white/90 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
+                <div className="flex flex-col gap-4 rounded-[28px] border border-[#E9DCC9] bg-white/90 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
                   <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B] sm:text-sm">
                     <span>What you&apos;ll capture</span>
                     <ArrowRight className="h-4 w-4 text-[#D2B193]" aria-hidden="true" />
@@ -138,9 +173,9 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
                     {bullets.map((item) => (
                       <li
                         key={item}
-                        className="flex items-start gap-3 rounded-2xl border border-transparent bg-white/95 p-4 shadow-sm transition group-hover:border-[#D2B193]/60"
+                        className="flex items-start gap-3 rounded-2xl border border-transparent bg-white/95 p-4 shadow-sm transition group-hover:border-[#D2B193]/50"
                       >
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#D2B193]" aria-hidden="true" />
+                        <ArrowUpRight className="mt-0.5 h-5 w-5 text-[#D2B193]" aria-hidden="true" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -160,13 +195,13 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
         })}
       </div>
 
-      <footer className="max-w-2xl space-y-4 text-sm leading-relaxed text-[#4D3F3F] sm:text-base">
+      <footer className="flex flex-col gap-4 rounded-[28px] border border-[#E6D8C4] bg-white/85 px-6 py-5 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_16px_36px_rgba(58,47,47,0.12)] sm:px-8 sm:text-base">
         <p>
-          You can adjust this later in settings. We use your selection to personalise templates, insights, and the journey ahead.
+          You can adjust this later in settings. Your pick helps us pre-fill templates, align recommendations, and surface the most relevant insights on your dashboard.
         </p>
         {value && (
-          <p className="inline-flex items-center gap-2 rounded-full bg-[#EFE3D1]/85 px-4 py-2 text-sm font-semibold text-[#2F2626]">
-            Great choice! Preparing the {value === 'business' ? 'business' : 'creator'} flow…
+          <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EFE3D1] px-4 py-2 text-sm font-semibold text-[#2F2626]">
+            Great choice! Preparing the {value === 'business' ? 'business owner' : 'content creator'} experience…
           </p>
         )}
       </footer>

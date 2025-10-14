@@ -1,41 +1,73 @@
-// File Path: src/app/dashboard/page.tsx
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import UserMenu from "@/components/auth/UserMenu";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { ActivityItem } from "@/components/dashboard/ActivityItem";
-import { Sparkles, Plus } from "lucide-react";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  FolderKanban,
+  BarChart3,
+  Settings,
+  Sparkles,
+  Lightbulb,
+  ArrowUpRight,
+  Clock3,
+} from 'lucide-react';
 
-// New icon components (fallback emoji to avoid unused imports)
-const DashboardIconNew = () => <span className="text-xl">📊</span>;
-const CalendarIconNew = () => <span className="text-xl">🗓️</span>;
-const VaultIconNew = () => <span className="text-xl">📦</span>;
-const AnalyticsIconNew = () => <span className="text-xl">📈</span>;
-const SettingsIconNew = () => <span className="text-xl">⚙️</span>;
+import UserMenu from '@/components/auth/UserMenu';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { ActivityItem } from '@/components/dashboard/ActivityItem';
+import { cn } from '@/lib/utils';
 
-// Reusable NavLink for the sidebar
-const NavLink = ({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <a href={href} className="flex items-center space-x-3 px-4 py-3 text-[#6B5E5E] rounded-xl hover:bg-[#D2B193] hover:text-white border border-transparent hover:border-[#EFE8D8] transition-colors duration-200">
-    {icon}
-    <span className="font-medium">{children}</span>
-  </a>
-);
+type DashboardStats = {
+  scheduledPosts: number;
+  ideasInVault: number;
+  engagementDelta: number;
+};
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/vault', label: 'Content Vault', icon: FolderKanban },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+];
+
+function NavLink({ href, icon: Icon, label, isActive }: NavItem & { isActive: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors duration-200',
+        isActive
+          ? 'bg-[#3A2F2F] text-white shadow-[0_20px_45px_rgba(58,47,47,0.25)]'
+          : 'text-[#6B5E5E] hover:bg-[#F2E7DA] hover:text-[#2F2626]'
+      )}
+    >
+      <Icon className="h-5 w-5" aria-hidden="true" />
+      <span>{label}</span>
+    </Link>
+  );
+}
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [welcomeMessage, setWelcomeMessage] = useState('Welcome back!');
-  const [stats, setStats] = useState<{ scheduledPosts: number; ideasInVault: number; engagementDelta: number } | null>(null)
-  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
-    // Fetch the personalized welcome message from the new API route
     const fetchWelcomeMessage = async () => {
       try {
         const response = await fetch('/api/user/welcome-message');
@@ -43,23 +75,29 @@ export default function DashboardPage() {
           const data = await response.json();
           setWelcomeMessage(data.message);
         }
-      } catch (error) {
-        console.error("Failed to fetch welcome message", error);
+      } catch (fetchError) {
+        console.error('Failed to fetch welcome message', fetchError);
       }
     };
-    fetchWelcomeMessage();
 
-    // Fetch live dashboard stats
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/dashboard/stats')
+        const res = await fetch('/api/dashboard/stats');
         if (res.ok) {
-          const data = await res.json()
-          setStats({ scheduledPosts: data.scheduledPosts, ideasInVault: data.ideasInVault, engagementDelta: data.engagementDelta })
+          const data = await res.json();
+          setStats({
+            scheduledPosts: data.scheduledPosts,
+            ideasInVault: data.ideasInVault,
+            engagementDelta: data.engagementDelta,
+          });
         }
-      } catch {}
-    }
-    fetchStats()
+      } catch (fetchError) {
+        console.error('Failed to fetch dashboard stats', fetchError);
+      }
+    };
+
+    fetchWelcomeMessage();
+    fetchStats();
   }, []);
 
   const handleGenerateContent = async () => {
@@ -78,127 +116,201 @@ export default function DashboardPage() {
 
       const { batchId } = await response.json();
       router.push(`/plan-review/${batchId}`);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } catch (generateError) {
+      setError(generateError instanceof Error ? generateError.message : 'An unknown error occurred.');
       setIsLoading(false);
     }
   };
 
+  const overviewCards = [
+    {
+      title: 'Scheduled Posts',
+      value: stats ? stats.scheduledPosts.toLocaleString() : '—',
+      helper: 'Next post Friday at 10:00',
+      icon: Clock3,
+    },
+    {
+      title: 'Ideas in Vault',
+      value: stats ? stats.ideasInVault.toLocaleString() : '—',
+      helper: 'Fresh inspiration waiting',
+      icon: Lightbulb,
+    },
+    {
+      title: 'Engagement (7d)',
+      value: stats ? `${stats.engagementDelta}%` : '—',
+      helper: 'Across all connected channels',
+      icon: ArrowUpRight,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F7F4EE] font-montserrat text-[#2D2424] relative">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#F8F2EA] via-[#FDF9F3] to-[#F0E3D2] font-montserrat text-[#2D2424]">
       <LoadingOverlay show={isLoading} label="Generating content" />
-      <div className="flex">
-        <aside className="w-72 bg-white/90 backdrop-blur border-r border-[#EFE8D8] hidden md:flex flex-col justify-between sticky top-0 h-screen">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-72 flex-col justify-between border-r border-[#EADCCE] bg-white/80 backdrop-blur md:flex">
           <div>
-            <div className="px-6 py-6 flex items-center justify-between border-b border-[#EFE8D8]">
+            <div className="flex items-center justify-between border-b border-[#EADCCE] px-6 py-6">
               <h1 className="text-2xl font-bold tracking-tight">Curative</h1>
-              <Sparkles className="h-5 w-5 text-[#D2B193]" />
+              <Sparkles className="h-5 w-5 text-[#D2B193]" aria-hidden="true" />
             </div>
-            <nav className="space-y-1 p-4">
-              <NavLink href="/dashboard" icon={<DashboardIconNew />}>Dashboard</NavLink>
-              <NavLink href="/calendar" icon={<CalendarIconNew />}>Calendar</NavLink>
-              <NavLink href="/vault" icon={<VaultIconNew />}>Content Vault</NavLink>
-              <NavLink href="/analytics" icon={<AnalyticsIconNew />}>Analytics</NavLink>
+            <nav className="space-y-2 px-4 py-6">
+              {NAV_ITEMS.map((item) => (
+                <NavLink key={item.href} {...item} isActive={pathname.startsWith(item.href)} />
+              ))}
             </nav>
           </div>
-          <nav className="p-4 border-t border-[#EFE8D8]">
-            <NavLink href="/settings" icon={<SettingsIconNew />}>Settings</NavLink>
+          <nav className="border-t border-[#EADCCE] px-4 py-6">
+            <NavLink href="/settings" label="Settings" icon={Settings} isActive={pathname.startsWith('/settings')} />
           </nav>
         </aside>
 
-        <div className="flex-1 flex flex-col">
-          <header className="bg-white/70 backdrop-blur-lg sticky top-0 z-10 border-b border-[#EFE8D8]">
-            <div className="container mx-auto px-6">
-              <div className="flex justify-between items-center h-20">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold tracking-tight">{welcomeMessage}</h2>
-                  <span className="text-sm text-[#7A6F6F] hidden md:inline">Your content command center</span>
+        <main className="relative flex-1 overflow-y-auto">
+          <header className="sticky top-0 z-10 border-b border-[#EADCCE] bg-white/80 backdrop-blur">
+            <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+              <div className="space-y-1">
+                <p className="text-sm uppercase tracking-[0.4em] text-[#B89B7B]">Welcome back</p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-4">
+                  <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{welcomeMessage}</h2>
+                  <span className="text-sm text-[#7A6F6F]">Your content command center</span>
                 </div>
-                <UserMenu />
               </div>
+              <UserMenu />
             </div>
           </header>
 
-          <main className="container mx-auto px-6 py-8">
-            {/* Hero / Primary action */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2" variant="glass" isInteractive>
-                <CardContent className="p-8">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-3xl font-floreal">Content Dashboard</h2>
-                      <p className="mt-2 text-[#6B5E5E]">Ready to spark some creativity? Generate your next batch of content ideas.</p>
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10">
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <Card
+                padding="lg"
+                className="border-transparent bg-gradient-to-br from-[#FCF2E4] via-[#F7E7D3] to-[#F1DBC0] text-[#2F2626] shadow-[0_32px_90px_rgba(58,47,47,0.18)]"
+              >
+                <div className="flex flex-col gap-8">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-3">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B]">
+                        Content Dashboard
+                      </span>
+                      <h3 className="text-3xl font-floreal leading-tight sm:text-4xl">Spark your next big campaign</h3>
+                      <p className="max-w-xl text-base leading-relaxed text-[#5E4E4E]">
+                        Generate ready-to-edit concepts, review performance, and keep momentum with curated prompts tailored to your goals.
+                      </p>
                     </div>
-                    <Sparkles className="h-6 w-6 text-[#D2B193]" />
+                    <Sparkles className="h-8 w-8 text-[#D2B193]" aria-hidden="true" />
                   </div>
-                  <div className="mt-6 flex flex-wrap items-center gap-3">
-                    <Button onClick={handleGenerateContent} disabled={isLoading} className="px-6">
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <Button onClick={handleGenerateContent} disabled={isLoading} className="w-full sm:w-auto">
                       {isLoading ? 'Generating…' : 'Generate New Content Ideas'}
                     </Button>
-                    <Button variant="secondary" className="px-6" onClick={() => router.push('/vault')}>
-                      <Plus className="h-4 w-4 mr-2" /> Create Post
-                    </Button>
-                  </div>
-                  {error && (
-                    <div className="p-4 mt-6 text-[#B42318] bg-[#FEF3F2] border border-[#FEE4E2] rounded-lg">
-                      <p><span className="font-semibold">Oops!</span> {error}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card variant="solid" isInteractive>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm text-[#6B5E5E]">Account Status</h3>
-                      <p className="text-2xl font-semibold mt-1 text-[#C49B75]">Free</p>
-                    </div>
-                    <span className="h-5 w-5 text-[#D2B193]">⏰</span>
-                  </div>
-                  <div className="mt-4 text-sm text-[#6B5E5E]">Upgrade for unlimited generations and scheduling.</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* KPIs */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCard label="Scheduled Posts" value={stats ? stats.scheduledPosts : '—'} />
-              <StatCard label="Ideas in Vault" value={stats ? stats.ideasInVault : '—'} />
-              <StatCard label="Views (Last 7d)" value={stats ? `${stats.engagementDelta}%` : '—'} />
-            </div>
-          </main>
-            {/* Quick actions & Recent activity */}
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2" variant="glass" isInteractive>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold">Recent Activity</h3>
-                  <ul className="mt-4 space-y-3">
-                    <ActivityItem>3 posts were generated and added to the vault</ActivityItem>
-                    <ActivityItem>1 post scheduled for Friday at 10:00</ActivityItem>
-                    <ActivityItem>Brand profile updated</ActivityItem>
-                  </ul>
-                </CardContent>
-              </Card>
-              <Card variant="solid" isInteractive>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold">Quick Actions</h3>
-                  <div className="mt-4 flex flex-col gap-3">
-                    <Button variant="secondary" onClick={() => router.push('/onboarding')} className="justify-start">
-                      Update Brand Profile
-                    </Button>
-                    <Button variant="secondary" onClick={() => router.push('/calendar')} className="justify-start">
-                      Open Calendar
-                    </Button>
-                    <Button variant="secondary" onClick={() => router.push('/vault')} className="justify-start">
+                    <Button
+                      variant="secondary"
+                      className="w-full sm:w-auto"
+                      onClick={() => router.push('/vault')}
+                      disabled={isLoading}
+                    >
                       Browse Content Vault
                     </Button>
                   </div>
-                </CardContent>
+
+                  {error && (
+                    <div className="rounded-2xl border border-[#FEE4E2] bg-[#FEF3F2] px-4 py-3 text-sm text-[#B42318]">
+                      <p className="font-semibold">Something went wrong.</p>
+                      <p className="mt-1 leading-relaxed">{error}</p>
+                    </div>
+                  )}
+                </div>
               </Card>
-            </div>
-        </div>
+
+              <Card
+                padding="lg"
+                className="border-transparent bg-white/90 shadow-[0_24px_60px_rgba(58,47,47,0.16)]"
+              >
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-sm uppercase tracking-[0.32em] text-[#B89B7B]">Account Status</h3>
+                      <p className="text-3xl font-semibold text-[#C49B75]">Free</p>
+                    </div>
+                    <span className="rounded-full bg-[#F3E6D6] px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#2F2626]">
+                      Upgrade
+                    </span>
+                  </div>
+                  <p className="text-sm leading-relaxed text-[#5E4E4E]">
+                    Unlock unlimited generations, smart scheduling, and advanced analytics with Curative Pro.
+                  </p>
+                  <Button variant="secondary" onClick={() => router.push('/settings')} className="w-full">
+                    See plans
+                  </Button>
+                </div>
+              </Card>
+            </section>
+
+            <section className="grid gap-6 md:grid-cols-3">
+              {overviewCards.map(({ title, value, helper, icon: Icon }) => (
+                <Card
+                  key={title}
+                  padding="lg"
+                  className="border-transparent bg-white/90 shadow-[0_20px_55px_rgba(58,47,47,0.12)]"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase tracking-[0.32em] text-[#B89B7B]">{title}</p>
+                      <p className="text-3xl font-semibold text-[#2F2626]">{value}</p>
+                      <p className="text-sm text-[#6B5E5E]">{helper}</p>
+                    </div>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  </div>
+                </Card>
+              ))}
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <Card
+                padding="lg"
+                className="border-transparent bg-white/90 shadow-[0_26px_70px_rgba(58,47,47,0.14)]"
+              >
+                <h3 className="text-lg font-semibold text-[#2F2626]">Recent Activity</h3>
+                <ul className="mt-5 space-y-3">
+                  <ActivityItem>3 posts were generated and added to the vault</ActivityItem>
+                  <ActivityItem>1 post scheduled for Friday at 10:00</ActivityItem>
+                  <ActivityItem>Brand profile updated</ActivityItem>
+                </ul>
+              </Card>
+
+              <Card
+                padding="lg"
+                className="border-transparent bg-gradient-to-br from-white via-[#F9EFE0] to-[#EEDBC4] shadow-[0_24px_60px_rgba(58,47,47,0.16)]"
+              >
+                <h3 className="text-lg font-semibold text-[#2F2626]">Quick Actions</h3>
+                <div className="mt-5 flex flex-col gap-3">
+                  <Button
+                    variant="secondary"
+                    className="justify-start"
+                    onClick={() => router.push('/onboarding')}
+                  >
+                    Update Brand Profile
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="justify-start"
+                    onClick={() => router.push('/calendar')}
+                  >
+                    Open Calendar
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="justify-start"
+                    onClick={() => router.push('/vault')}
+                  >
+                    Browse Content Vault
+                  </Button>
+                </div>
+              </Card>
+            </section>
+          </div>
+        </main>
       </div>
     </div>
   );
