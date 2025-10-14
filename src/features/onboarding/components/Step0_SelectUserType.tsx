@@ -98,30 +98,42 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
                 }
               }}
             >
-              <CardContent className="relative z-10 flex h-full flex-col gap-7 p-8 text-left sm:p-10">
-                <div className="flex items-start justify-between gap-4">
-                  <span
-                    className={`inline-flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                      isSelected
-                        ? 'border-[#3A2F2F] bg-[#3A2F2F] text-white'
-                        : 'border-[#D2B193]/70 bg-white/80 text-[#3A2F2F] group-hover:border-[#3A2F2F]'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                    {label}
-                  </span>
-                  {isSelected && (
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#3A2F2F] text-base font-semibold text-white shadow-lg">
-                      ✓
+              <CardContent className="relative z-10 grid h-full gap-8 p-8 text-left sm:p-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <span
+                      className={`inline-flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        isSelected
+                          ? 'border-[#3A2F2F] bg-[#3A2F2F] text-white'
+                          : 'border-[#D2B193]/70 bg-white/80 text-[#3A2F2F] group-hover:border-[#3A2F2F]'
+                      }`}
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F3E6D6] text-[#3A2F2F] shadow-inner">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      {label}
                     </span>
-                  )}
+                    {isSelected && (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-[#3A2F2F] px-4 py-2 text-sm font-semibold text-white shadow-lg">
+                        ✓ Selected
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-base leading-relaxed text-[#584949] sm:text-lg">{summary}</p>
+
+                  <div className="hidden rounded-2xl border border-[#E6D7C4] bg-white/80 p-4 text-sm text-[#5E5151] shadow-[0_12px_32px_rgba(58,47,47,0.08)] lg:block">
+                    {isSelected ? (
+                      <p className="font-semibold text-[#3A2F2F]">We&apos;ll tailor prompts, dashboards, and quick-start tasks for this journey.</p>
+                    ) : (
+                      <p>Preview what you&apos;ll capture in this flow below. Selecting an option highlights the next best step.</p>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-base leading-relaxed text-[#584949] sm:text-lg">{summary}</p>
-
-                <ul className="min-h-[160px] space-y-3 text-sm leading-relaxed text-[#5E5151] sm:text-base">
+                <ul className="grid gap-3 text-sm leading-relaxed text-[#5E5151] sm:text-base md:grid-cols-1 xl:grid-cols-2">
                   {bullets.map((item) => (
-                    <li key={item} className="flex items-start gap-3">
+                    <li key={item} className="flex items-start gap-3 rounded-2xl border border-transparent bg-white/70 p-3 shadow-sm transition group-hover:border-[#E6D7C4]">
                       <ArrowRight className="mt-[6px] h-4 w-4 shrink-0 text-[#D2B193]" aria-hidden="true" />
                       <span>{item}</span>
                     </li>

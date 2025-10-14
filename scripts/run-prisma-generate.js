@@ -42,13 +42,26 @@ if (!chosen) {
 
 const postgresPattern = /^postgres(?:ql)?:\/\//i;
 if (!postgresPattern.test(connection)) {
+  const originalValue = connection;
   if (/^https?:\/\//i.test(connection) && connection.includes('.supabase.co')) {
-    console.error('\n❌ It looks like you supplied the Supabase project URL.');
-    console.error('Copy the "Connection string" under Settings → Database instead (it begins with postgresql://).');
+    console.warn('\n⚠️  It looks like you supplied the Supabase project URL.');
+    console.warn(
+      'Grab the "Connection string" from Settings → Database instead (it begins with postgresql://).',
+    );
   } else {
-    console.error(`\n❌ ${originKey} must begin with "postgresql://" or "postgres://".`);
+    console.warn(`\n⚠️  ${originKey} must begin with "postgresql://" or "postgres://".`);
   }
-  process.exit(1);
+
+  if (!ciMode) {
+    console.warn('Falling back to a local placeholder so Prisma Client can still be generated.');
+  }
+
+  connection = placeholderUrl;
+  originKey = `${originKey || 'DATABASE_URL'} (placeholder)`;
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(`Provided value: ${originalValue}`);
+  }
 }
 
 if (!/[?&]sslmode=/i.test(connection)) {

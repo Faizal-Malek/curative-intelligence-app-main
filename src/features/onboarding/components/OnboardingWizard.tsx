@@ -521,7 +521,7 @@ export default function OnboardingWizard() {
                 </div>
 
                 {stepGuidance && (
-                  <aside className="hidden h-full flex-col gap-8 border-t border-white/40 bg-gradient-to-b from-white/85 via-white/70 to-white/40 p-8 text-[#3A2F2F] lg:flex lg:max-w-sm lg:border-l lg:border-t-0 xl:max-w-md">
+                  <aside className="hidden h-full flex-col gap-8 border-t border-white/40 bg-gradient-to-b from-white/85 via-white/70 to-white/40 p-8 text-[#3A2F2F] lg:sticky lg:top-8 lg:flex lg:max-w-sm lg:self-start lg:border-l lg:border-t-0 xl:max-w-md">
                     <div className="space-y-3">
                       <p className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-1.5 text-xs uppercase tracking-[0.35em] text-[#B89B7B]">
                         Pro Tip

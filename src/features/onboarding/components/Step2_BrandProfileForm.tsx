@@ -18,59 +18,68 @@ export const Step2_BrandProfileForm = () => {
   // Runtime sanity checks to help debug undefined imports that cause "reading 'call'" errors.
   if (!register) {
     // This will show up in server/browser logs and point to the real missing value.
-    console.error('[Step2_BrandProfileForm] react-hook-form register is undefined')
+    console.error('[Step2_BrandProfileForm] react-hook-form register is undefined');
   }
 
 
   return (
-    <Card variant="solid" className="shadow-[0_10px_30px_rgba(58,47,47,0.10)]">
-      <CardHeader>
-        <CardTitle>Define Your Brand</CardTitle>
+    <Card
+      variant="solid"
+      className="border border-[#E5D4BF] bg-white/95 shadow-[0_28px_90px_rgba(58,47,47,0.16)] backdrop-blur"
+    >
+      <CardHeader className="space-y-3 pb-0">
+        <CardTitle className="text-3xl text-brand-dark-umber">Define Your Brand</CardTitle>
+        <p className="max-w-3xl text-sm leading-relaxed text-brand-text-secondary">
+          We use this information to shape your voice, visuals, and recommended campaigns. Keep it succinct but specific so
+          the AI can mirror how you show up today.
+        </p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Field for Brand Name */}
-        <div>
-          <label htmlFor="brandName" className="block text-sm font-medium text-brand-dark-umber mb-2">
-            Brand Name
-          </label>
-          <Input
-            id="brandName"
-            placeholder="e.g., Curative Concepts"
-            {...register("brandName")}
-            variant={errors.brandName ? "error" : "default"}
-          />
-          {errors.brandName && <p className="text-sm text-red-500 mt-1">{errors.brandName.message}</p>}
+      <CardContent className="space-y-10 pt-8">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <label htmlFor="brandName" className="block text-sm font-semibold text-brand-dark-umber">
+              Brand Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="brandName"
+              placeholder="e.g., Curative Concepts"
+              {...register("brandName")}
+              variant={errors.brandName ? "error" : "default"}
+            />
+            {errors.brandName && <p className="text-sm text-red-500">{errors.brandName.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="industry" className="block text-sm font-semibold text-brand-dark-umber">
+              Industry <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="industry"
+              placeholder="e.g., Wellness, Tech, Retail"
+              {...register("industry")}
+              variant={errors.industry ? "error" : "default"}
+            />
+            {errors.industry && <p className="text-sm text-red-500">{errors.industry.message}</p>}
+          </div>
         </div>
 
-        {/* Field for Industry */}
-        <div>
-          <label htmlFor="industry" className="block text-sm font-medium text-brand-dark-umber mb-2">
-            Industry
-          </label>
-          <Input
-            id="industry"
-            placeholder="e.g., Wellness, Tech, Retail"
-            {...register("industry")}
-            variant={errors.industry ? "error" : "default"}
-          />
-          {errors.industry && <p className="text-sm text-red-500 mt-1">{errors.industry.message}</p>}
-        </div>
-        
-        {/* Field for Brand Description */}
-        <div>
-          <label htmlFor="brandDescription" className="block text-sm font-medium text-brand-dark-umber mb-2">
-            Brand Description
+        <div className="space-y-3">
+          <label htmlFor="brandDescription" className="block text-sm font-semibold text-brand-dark-umber">
+            Brand Description <span className="text-red-500">*</span>
           </label>
           <Textarea
             id="brandDescription"
             placeholder="Describe your brand, mission, and values..."
             {...register("brandDescription")}
             variant={errors.brandDescription ? "error" : "default"}
+            className="min-h-[160px]"
           />
-          {errors.brandDescription && <p className="text-sm text-red-500 mt-1">{errors.brandDescription.message}</p>}
+          {errors.brandDescription && <p className="text-sm text-red-500">{errors.brandDescription.message}</p>}
+          <div className="rounded-xl border border-dashed border-[#E5D4BF] bg-white/80 p-4 text-xs leading-relaxed text-brand-text-secondary">
+            Tip: Mention who you serve, the transformation you deliver, and what differentiates your offer. Two to three short
+            sentences work best.
+          </div>
         </div>
-
-        {/* Step 2 ends here at Brand Description */}
       </CardContent>
     </Card>
   );
