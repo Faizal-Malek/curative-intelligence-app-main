@@ -24,7 +24,7 @@ export function Step0_SelectUserType({ value, onSelect, onNext }: {
       <div className="space-y-4">
         <h1 className="text-4xl font-display text-[#3A2F2F] mb-2">Welcome to Curative</h1>
         <p className="text-xl text-[#7A6F6F] max-w-2xl">
-          Let's get you set up for success. Choose your path to get a personalized experience 
+          Let&apos;s get you set up for success. Choose your path to get a personalized experience
           tailored to your content creation goals.
         </p>
       </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { OnboardingFormData } from "@/lib/validations/onboarding";
 import { cn } from "@/lib/utils";
 import { Target, MessageSquare, BarChart3, Link } from "lucide-react";
@@ -40,7 +40,6 @@ export const Step3_SetGoals = () => {
             type="button"
             onClick={() => setValue("primaryGoal", goal.id, { shouldValidate: true, shouldDirty: true, shouldTouch: true })}
             className="text-left focus:outline-none"
-            aria-pressed={selectedGoal === goal.id}
             aria-selected={selectedGoal === goal.id}
             role="option"
           >

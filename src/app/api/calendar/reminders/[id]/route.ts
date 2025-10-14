@@ -12,8 +12,16 @@ const updateSchema = z.object({
   allDay: z.boolean().optional(),
 })
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const { id } = params
+type ReminderRouteParams = Promise<{ id: string | string[] | undefined }>
+
+const resolveReminderId = async (params: ReminderRouteParams) => {
+  const { id } = await params
+  return Array.isArray(id) ? id[0] : id
+}
+
+export async function GET(_req: Request, { params }: { params: ReminderRouteParams }) {
+  const id = await resolveReminderId(params)
+  if (!id) return new NextResponse('Invalid reminder id', { status: 400 })
   const su = await getSupabaseUserFromCookies()
   if (!su) return new NextResponse('Unauthorized', { status: 401 })
   
@@ -25,9 +33,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json({ reminder: item })
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: ReminderRouteParams }) {
   try {
-    const { id } = params
+    const id = await resolveReminderId(params)
+    if (!id) return new NextResponse('Invalid reminder id', { status: 400 })
     const su = await getSupabaseUserFromCookies()
     if (!su) return new NextResponse('Unauthorized', { status: 401 })
     
@@ -49,9 +58,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: ReminderRouteParams }) {
   try {
-    const { id } = params
+    const id = await resolveReminderId(params)
+    if (!id) return new NextResponse('Invalid reminder id', { status: 400 })
     const su = await getSupabaseUserFromCookies()
     if (!su) return new NextResponse('Unauthorized', { status: 401 })
     

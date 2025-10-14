@@ -27,7 +27,7 @@ export const Step1_Welcome: React.FC<Step1WelcomeProps> = ({ onNext, onClose }) 
           )}
           <h1 className="text-4xl font-display text-brand-dark-umber">Welcome to Curative</h1>
           <p className="mt-4 text-lg text-brand-text-secondary max-w-xl mx-auto">
-            Let's get you set up for success. This quick onboarding will help us understand your brand and goals so we can tailor your experience.
+            Let&apos;s get you set up for success. This quick onboarding will help us understand your brand and goals so we can tailor your experience.
           </p>
           <Button onClick={onNext} size="lg" className="mt-8">
             Get Started
