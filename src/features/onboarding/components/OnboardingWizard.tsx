@@ -521,20 +521,25 @@ export default function OnboardingWizard() {
                 </div>
 
                 {stepGuidance && (
-                  <aside className="hidden h-full flex-col justify-between gap-6 border-t border-white/40 bg-gradient-to-b from-white/80 to-white/40 p-8 text-[#3A2F2F] lg:flex lg:border-l lg:border-t-0">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-[#B89B7B]">Pro Tip</p>
-                      <h3 className="mt-3 text-2xl font-semibold text-[#3A2F2F]">{stepGuidance.title}</h3>
-                      <p className="mt-3 text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
+                  <aside className="hidden h-full flex-col gap-8 border-t border-white/40 bg-gradient-to-b from-white/85 via-white/70 to-white/40 p-8 text-[#3A2F2F] lg:flex lg:max-w-sm lg:border-l lg:border-t-0 xl:max-w-md">
+                    <div className="space-y-3">
+                      <p className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-1.5 text-xs uppercase tracking-[0.35em] text-[#B89B7B]">
+                        Pro Tip
+                      </p>
+                      <h3 className="text-2xl font-semibold text-[#3A2F2F]">{stepGuidance.title}</h3>
+                      <p className="text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
                     </div>
-                    <ul className="space-y-4 text-sm leading-relaxed text-[#5E5151]">
-                      {stepGuidance.bullets.map((item) => (
-                        <li key={item} className="flex items-start gap-3">
-                          <span className="mt-[6px] inline-flex h-2 w-2 shrink-0 rounded-full bg-[#D2B193]" aria-hidden="true"></span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-4 rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_14px_36px_rgba(58,47,47,0.12)]">
+                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#B89B7B]">Checklist</p>
+                      <ul className="space-y-3 text-sm leading-relaxed text-[#5E5151]">
+                        {stepGuidance.bullets.map((item) => (
+                          <li key={item} className="flex items-start gap-3">
+                            <span className="mt-[6px] inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#D2B193]" aria-hidden="true"></span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </aside>
                 )}
               </div>
