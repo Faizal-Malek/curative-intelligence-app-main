@@ -78,185 +78,112 @@ export function Step0_SelectUserType({
   ];
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[40px] border border-[#F0E5D4] bg-[#FDF8F0]/90 px-4 py-10 shadow-[0_32px_120px_rgba(61,47,34,0.18)] sm:px-6 lg:px-12">
-      <div className="pointer-events-none absolute inset-x-6 inset-y-8 -z-10 rounded-[36px] bg-gradient-to-br from-white/70 via-[#FBF1E2]/80 to-[#F1DCC1]/60 blur-0" aria-hidden="true" />
-
-      <div className="mx-auto w-full max-w-6xl space-y-12">
-        <div className="flex justify-center">
-          <div className="relative w-full max-w-4xl">
-            <div className="pointer-events-none absolute inset-x-0 top-1/2 hidden -translate-y-1/2 border-t border-[#E6D8C4] sm:block" aria-hidden="true" />
-            <ol
-              className="relative flex items-center gap-3 overflow-x-auto rounded-full border border-[#E6D8C4] bg-white/80 px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-[#B89B7B] shadow-[0_18px_50px_rgba(58,47,47,0.12)] sm:justify-between sm:gap-6 sm:px-8"
-            >
-          {PROGRESS_STEPS.map((step, index) => {
-            const isActive = index === 0;
-
-            return (
-                  <li key={step} className="flex flex-shrink-0 flex-col items-center gap-2 text-center sm:flex-1">
-                <span
-                  className={cn(
-                        'flex h-11 w-11 items-center justify-center rounded-full border text-xs transition-colors duration-200',
-                    isActive
-                      ? 'border-[#2F2626] bg-[#2F2626] text-white shadow-[0_12px_30px_rgba(47,38,38,0.3)]'
-                      : 'border-[#E6D8C4] bg-white/90 text-[#B89B7B] shadow-[0_10px_24px_rgba(58,47,47,0.08)]'
-                  )}
-                >
-                  {index + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            );
-          })}
-            </ol>
-          </div>
+    <section className="relative isolate space-y-10">
+      <header className="space-y-5 text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
+          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
+        </span>
+        <div className="space-y-4">
+          <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Choose your journey</h1>
+          <p className="mx-auto max-w-2xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
+            Pick the option that reflects how you plan to use Curative. We&apos;ll tailor each step to surface the most relevant strategy, messaging, and insights for your team.
+          </p>
         </div>
+      </header>
 
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,3.2fr)_minmax(0,1.8fr)] xl:gap-16">
-          <div className="space-y-10">
-            <header className="space-y-5">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
-              </span>
-              <div className="space-y-4">
-                <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Choose your journey</h1>
-                <p className="max-w-2xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
-                  Pick the option that reflects how you plan to use Curative. We&apos;ll tailor each step to surface the most relevant strategy, messaging, and insights for your team.
-                </p>
-              </div>
-            </header>
+      <div
+        className="grid gap-8 md:grid-cols-2 lg:gap-10"
+        role="radiogroup"
+        aria-label="Select how you'll be using Curative"
+      >
+        {cards.map(({ id, label, icon: Icon, summary, bullets }) => {
+          const isSelected = value === id;
 
-            <div
-              className="grid gap-6 md:grid-cols-2"
-              role="radiogroup"
-              aria-label="Select how you'll be using Curative"
-            >
-            {cards.map(({ id, label, icon: Icon, summary, bullets }) => {
-              const isSelected = value === id;
-
-              return (
-                <Card
-                  key={id}
-                    className={cn(
-                      CARD_BASE_CLASSES,
-                      'md:min-h-[480px] xl:min-h-[520px]',
-                      isSelected ? CARD_SELECTED_CLASSES : CARD_IDLE_CLASSES
-                    )}
-                  role="radio"
-                  aria-checked={isSelected}
-                  tabIndex={0}
-                  onClick={() => handleSelect(id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      handleSelect(id);
-                    }
-                  }}
-                >
-                    <CardContent className="relative z-10 flex h-full flex-col justify-between gap-8 p-7 text-left sm:p-9">
-                      <div className="space-y-6">
-                        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="flex items-start gap-4">
-                            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F3E6D6] text-[#2F2626] shadow-inner">
-                              <Icon className="h-6 w-6" aria-hidden="true" />
-                            </span>
-                            <div className="space-y-1">
-                              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Tailored journey</p>
-                              <h2 className="text-2xl font-semibold text-[#2F2626] sm:text-[1.7rem]">{label}</h2>
-                            </div>
-                          </div>
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-2 rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.3em] transition-colors sm:self-start',
-                              isSelected
-                                ? 'bg-[#2F2626] text-white shadow-lg'
-                                : 'border border-[#E6D8C4] text-[#B89B7B]'
-                            )}
-                          >
-                            {isSelected ? 'Selected' : 'Preview journey'}
-                          </span>
-                        </div>
-
-                        <p className="text-base leading-relaxed text-[#4D3F3F] sm:text-[1.05rem]">{summary}</p>
-                      </div>
-
-                      <div className="flex flex-col gap-4 rounded-[24px] border border-[#E9DCC9] bg-white/95 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
-                        <div className="flex items-center justify-between gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-[#B89B7B] sm:text-sm">
-                          <span>What you&apos;ll capture</span>
-                          <ArrowRight className="h-4 w-4 text-[#D2B193]" aria-hidden="true" />
-                        </div>
-                        <ul className="grid gap-3 text-sm leading-relaxed text-[#4D3F3F] sm:text-base">
-                          {bullets.map((item) => (
-                            <li
-                              key={item}
-                              className="flex items-start gap-3 rounded-2xl border border-transparent bg-white p-4 shadow-sm transition group-hover:border-[#D2B193]/45"
-                            >
-                              <ArrowUpRight className="mt-0.5 h-5 w-5 text-[#D2B193]" aria-hidden="true" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                      aria-hidden="true"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/12 to-white/30" />
-                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#D2B193]/25 via-transparent to-transparent" />
-                    </div>
-                </Card>
-              );
-            })}
-            </div>
-
-            <footer className="flex flex-col gap-4 rounded-[28px] border border-[#E6D8C4] bg-white/85 px-6 py-5 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_16px_36px_rgba(58,47,47,0.12)] sm:px-8 sm:text-base">
-              <p>
-                You can adjust this later in settings. Your pick helps us pre-fill templates, align recommendations, and surface the most relevant insights on your dashboard.
-              </p>
-              {value && (
-                <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EFE3D1] px-4 py-2 text-sm font-semibold text-[#2F2626]">
-                  Great choice! Preparing the {value === 'business' ? 'business owner' : 'content creator'} experience…
-                </p>
+          return (
+            <Card
+              key={id}
+              className={cn(
+                CARD_BASE_CLASSES,
+                'cursor-pointer md:min-h-[520px]',
+                isSelected ? CARD_SELECTED_CLASSES : CARD_IDLE_CLASSES
               )}
-            </footer>
-          </div>
-
-          <aside className="space-y-6">
-            <div className="rounded-[28px] border border-[#E6D8C4] bg-white/92 p-8 text-sm leading-relaxed text-[#4D3F3F] shadow-[0_18px_48px_rgba(58,47,47,0.12)] sm:text-base">
-              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Pro tip</p>
-              <h3 className="mt-4 text-2xl font-semibold text-[#2F2626]">Choose the journey that fits best</h3>
-              <p className="mt-3">
-                Not sure where to start? Pick the path that matches your current role. You can always update your selection from settings once you explore the workspace.
-              </p>
-            </div>
-
-            <Card className="rounded-[28px] border-[#E6D8C4] bg-white/95 shadow-[0_20px_55px_rgba(58,47,47,0.14)]">
-              <CardContent className="space-y-5 p-8">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Checklist</p>
-                    <h3 className="mt-2 text-lg font-semibold text-[#2F2626]">What we&apos;ll capture together</h3>
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={0}
+              onClick={() => handleSelect(id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleSelect(id);
+                }
+              }}
+            >
+              <CardContent className="relative z-10 flex h-full flex-col justify-between gap-8 p-8 text-left sm:p-10">
+                <div className="space-y-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <span className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#F3E6D6] text-[#2F2626] shadow-[0_14px_40px_rgba(58,47,47,0.16)] transition-transform group-hover:scale-105">
+                        <Icon className="h-7 w-7" aria-hidden="true" />
+                      </span>
+                      <div className="space-y-2">
+                        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-[#B89B7B]">Tailored journey</p>
+                        <h2 className="text-[1.75rem] font-semibold leading-tight text-[#2F2626] sm:text-3xl">{label}</h2>
+                      </div>
+                    </div>
                   </div>
+
+                  {isSelected && (
+                    <div className="flex items-center gap-2 rounded-full bg-[#2F2626] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-lg">
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      Selected
+                    </div>
+                  )}
+
+                  <p className="text-base leading-relaxed text-[#4D3F3F] sm:text-[1.05rem]">{summary}</p>
                 </div>
-                <ul className="space-y-4 text-sm text-[#4D3F3F] sm:text-base">
-                  {[
-                    'Brand basics: name, mission, and differentiators',
-                    'Audience clarity: who you serve and how they engage',
-                    'Voice & tone guardrails to keep content on-brand',
-                    'Goals that anchor campaigns and recommendations',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 rounded-2xl border border-[#F0E5D4] bg-white/90 p-4">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#3A2F2F]" aria-hidden="true" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+
+                <div className="flex flex-col gap-5 rounded-[24px] border border-[#E9DCC9] bg-white/95 p-6 shadow-[0_18px_45px_rgba(58,47,47,0.12)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B]">What you&apos;ll capture</span>
+                    <ArrowRight className="h-4 w-4 text-[#D2B193]" aria-hidden="true" />
+                  </div>
+                  <ul className="grid gap-3.5 text-sm leading-relaxed text-[#4D3F3F]">
+                    {bullets.map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-start gap-3 rounded-xl bg-white p-3.5 shadow-sm transition-all group-hover:shadow-md"
+                      >
+                        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-[#D2B193]" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </CardContent>
+
+              <div
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                aria-hidden="true"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/12 to-white/30" />
+                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#D2B193]/25 via-transparent to-transparent" />
+              </div>
             </Card>
-          </aside>
-        </div>
+          );
+        })}
       </div>
+
+      {value && (
+        <footer className="flex flex-col items-center gap-4 rounded-[28px] border border-[#E6D8C4] bg-white/85 px-6 py-6 text-center text-sm leading-relaxed text-[#4D3F3F] shadow-[0_16px_36px_rgba(58,47,47,0.12)] sm:px-8 sm:text-base">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#EFE3D1] px-5 py-2.5 text-sm font-semibold text-[#2F2626]">
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            Great choice! Preparing the {value === 'business' ? 'business owner' : 'content creator'} experience…
+          </div>
+          <p className="text-sm text-[#7A6F6F]">
+            You can adjust this later in settings. Your pick helps us pre-fill templates and surface relevant insights.
+          </p>
+        </footer>
+      )}
     </section>
   );
 }
