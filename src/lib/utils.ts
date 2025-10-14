@@ -2,8 +2,7 @@
 // Usage: cn('base', condition && 'conditional', ...)
 
 // Uses clsx for flexible conditional class handling
-import type { ClassValue } from "clsx"
-import clsx from "clsx"
+import { clsx, type ClassValue } from "clsx"
 
 // clsx returns a simple joined string
 export function cn(...inputs: ClassValue[]) {
