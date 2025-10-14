@@ -454,96 +454,103 @@ export default function OnboardingWizard() {
     );
   }
 
+  const showGuidancePanel = Boolean(stepGuidance && step !== 0);
+
   return (
     <FormProvider {...methods}>
       <div className="relative min-h-screen w-full overflow-hidden bg-brand-alabaster">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-48 -left-48 h-[40rem] w-[40rem] rounded-full bg-[#D2B193]/[var(--glow-opacity-1)] blur-3xl"></div>
-          <div className="absolute -bottom-56 -right-40 h-[32rem] w-[32rem] rounded-full bg-[#EFE8D8]/[var(--glow-opacity-2)] blur-3xl"></div>
+          <div className="absolute -top-48 -left-48 h-[40rem] w-[40rem] rounded-full bg-[#D2B193]/[var(--glow-opacity-1)] blur-3xl" />
+          <div className="absolute -bottom-56 -right-40 h-[32rem] w-[32rem] rounded-full bg-[#EFE8D8]/[var(--glow-opacity-2)] blur-3xl" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_500px_at_0%_0%,rgba(210,177,147,var(--radial-opacity)),transparent_60%)]"></div>
-        <div className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(58,47,47,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(58,47,47,0.04)_1px,transparent_1px)] [background-size:28px_28px]"></div>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_500px_at_0%_0%,rgba(210,177,147,var(--radial-opacity)),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(58,47,47,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(58,47,47,0.04)_1px,transparent_1px)] [background-size:28px_28px]" />
 
-        <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-8">
-          <div className="group relative mx-auto w-full max-w-6xl">
-            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#D2B193]/40 to-[#EFE8D8]/40 opacity-60 blur-3xl transition duration-500 group-hover:opacity-80"></div>
-            <div className="relative overflow-hidden rounded-3xl border border-white/25 bg-white/70 shadow-[0_24px_80px_rgba(58,47,47,0.18)] backdrop-blur-2xl">
-              <div className="grid gap-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.9fr)]">
-                <div className="p-6 sm:p-10">
-                  {/* Progress Bar */}
-                  <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
+        <div className="relative mx-auto flex min-h-screen max-w-[1340px] flex-col justify-center px-4 py-10 sm:px-8 lg:px-12">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)] xl:gap-12">
+            <section className="group relative isolate overflow-hidden rounded-[36px] border border-white/25 bg-white/75 shadow-[0_26px_90px_rgba(58,47,47,0.16)] backdrop-blur-2xl">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-transparent to-white/30" />
+                <div className="absolute -top-24 -right-20 h-64 w-64 rounded-full bg-[#EFE8D8]/45 blur-[120px]" />
+                <div className="absolute -bottom-20 -left-16 h-72 w-72 rounded-full bg-[#D2B193]/35 blur-[120px]" />
+              </div>
 
-                  {/* Error Display */}
-                  {formError && (
-                    <div className="mb-6 rounded-xl border border-red-200/80 bg-red-50/80 p-4 text-sm text-red-700 shadow-inner">
-                      {formError}
+              <div className="relative flex h-full flex-col px-5 py-8 sm:px-10 lg:px-12">
+                <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
+
+                {formError && (
+                  <div className="mb-8 rounded-2xl border border-red-200/80 bg-red-50/90 p-4 text-sm text-red-700 shadow-inner">
+                    {formError}
+                  </div>
+                )}
+
+                <div className="flex-1 space-y-8">
+                  {step === 0 && (
+                    <div className="-mx-1 sm:-mx-3 lg:-mx-6">
+                      <Step0_SelectUserType value={userType} onSelect={setUserType} onNext={handleNext} />
                     </div>
                   )}
+                  {step === 1 && <Step1_Welcome onNext={handleNext} onClose={() => router.push('/dashboard')} />}
 
-                  {/* Step Content */}
-                  <div className="mt-6 space-y-8">
-                    {step === 0 && <Step0_SelectUserType value={userType} onSelect={setUserType} onNext={handleNext} />}
-                    {step === 1 && <Step1_Welcome onNext={handleNext} onClose={() => router.push('/dashboard')} />}
+                  {/* Influencer Flow */}
+                  {userType === 'influencer' && step === 2 && <Influencer_Step2_Profile />}
+                  {userType === 'influencer' && step === 3 && <Influencer_Step3_AudienceAndPlatforms />}
+                  {userType === 'influencer' && step === 4 && <Influencer_Step3_StyleAndGoals />}
+                  {userType === 'influencer' && step === 5 && <Step3_SetGoals />}
 
-                    {/* Influencer Flow */}
-                    {userType === 'influencer' && step === 2 && <Influencer_Step2_Profile />}
-                    {userType === 'influencer' && step === 3 && <Influencer_Step3_AudienceAndPlatforms />}
-                    {userType === 'influencer' && step === 4 && <Influencer_Step3_StyleAndGoals />}
-                    {userType === 'influencer' && step === 5 && <Step3_SetGoals />}
+                  {/* Business Flow */}
+                  {userType === 'business' && step === 2 && <Step2_BrandProfileForm />}
+                  {userType === 'business' && step === 3 && <Business_Step3_TargetAudience />}
+                  {userType === 'business' && step === 4 && <Step3_BrandVoiceRules />}
+                  {userType === 'business' && step === 5 && <Step3_SetGoals />}
+                </div>
 
-                    {/* Business Flow */}
-                    {userType === 'business' && step === 2 && <Step2_BrandProfileForm />}
-                    {userType === 'business' && step === 3 && <Business_Step3_TargetAudience />}
-                    {userType === 'business' && step === 4 && <Step3_BrandVoiceRules />}
-                    {userType === 'business' && step === 5 && <Step3_SetGoals />}
-                  </div>
-
-                  {/* Navigation Buttons for steps 2-5 */}
-                  {step >= 2 && (
-                    <div className="mt-10 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {step >= 2 && (
+                  <div className="mt-12 border-t border-white/60 pt-6">
+                    <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <Button
                         variant="text"
                         onClick={() => setStep((prev) => Math.max(0, prev - 1))}
                         disabled={isLoading}
-                        className="justify-center sm:justify-start"
+                        className="justify-center text-[#3A2F2F] sm:justify-start"
                       >
                         Back
                       </Button>
                       <Button
                         onClick={handleNext}
                         disabled={isLoading}
-                        className="sm:min-w-[180px]"
+                        className="sm:min-w-[190px]"
                       >
                         {isLoading ? 'Submitting…' : step === TOTAL_STEPS - 1 ? 'Complete Setup' : 'Continue'}
                       </Button>
                     </div>
-                  )}
-                </div>
-
-                {stepGuidance && (
-                  <aside className="hidden h-full flex-col gap-8 border-t border-white/40 bg-gradient-to-b from-white/85 via-white/70 to-white/40 p-8 text-[#3A2F2F] lg:sticky lg:top-8 lg:flex lg:max-w-sm lg:self-start lg:border-l lg:border-t-0 xl:max-w-md">
-                    <div className="space-y-3">
-                      <p className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-1.5 text-xs uppercase tracking-[0.35em] text-[#B89B7B]">
-                        Pro Tip
-                      </p>
-                      <h3 className="text-2xl font-semibold text-[#3A2F2F]">{stepGuidance.title}</h3>
-                      <p className="text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
-                    </div>
-                    <div className="space-y-4 rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_14px_36px_rgba(58,47,47,0.12)]">
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#B89B7B]">Checklist</p>
-                      <ul className="space-y-3 text-sm leading-relaxed text-[#5E5151]">
-                        {stepGuidance.bullets.map((item) => (
-                          <li key={item} className="flex items-start gap-3">
-                            <span className="mt-[6px] inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#D2B193]" aria-hidden="true"></span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </aside>
+                  </div>
                 )}
               </div>
-            </div>
+            </section>
+
+            {showGuidancePanel && stepGuidance && (
+              <aside className="hidden h-full flex-col gap-8 rounded-[32px] border border-white/40 bg-white/75 p-8 text-[#3A2F2F] shadow-[0_22px_70px_rgba(58,47,47,0.16)] backdrop-blur-xl lg:sticky lg:top-24 lg:flex">
+                <div className="space-y-3">
+                  <p className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-1.5 text-xs uppercase tracking-[0.35em] text-[#B89B7B]">
+                    Pro Tip
+                  </p>
+                  <h3 className="text-2xl font-semibold text-[#3A2F2F]">{stepGuidance.title}</h3>
+                  <p className="text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
+                </div>
+                <div className="space-y-4 rounded-2xl border border-white/60 bg-white/75 p-6 shadow-[0_14px_36px_rgba(58,47,47,0.12)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#B89B7B]">Checklist</p>
+                  <ul className="space-y-3 text-sm leading-relaxed text-[#5E5151]">
+                    {stepGuidance.bullets.map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <span className="mt-[6px] inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#D2B193]" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </aside>
+            )}
           </div>
         </div>
       </div>
