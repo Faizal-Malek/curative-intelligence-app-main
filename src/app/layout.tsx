@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local"; // Use localFont for custom fonts
 import "./globals.css";
 import { ToastProvider } from '@/components/ui/Toast'
-import { cn } from "@/lib/utils";
 
 // --- Simple Explanation ---
 // We are setting up the two fonts required by our style guide.
@@ -28,19 +27,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const bodyStyle: React.CSSProperties & Record<string, string> = {
+    "--font-sans": '"Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif',
+  };
   return (
     <html lang="en" suppressHydrationWarning>
         <body
           suppressHydrationWarning
           //  We apply both font variables to the body.
           // We also add 'antialiased' for smoother text rendering.
-          className={cn(
-            "min-h-screen bg-[#FBFAF8] font-sans antialiased",
-            floreal.variable
-          )}
-          style={{
-            ["--font-sans" as const]: '"Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif',
-          }}
+          className={`min-h-screen bg-[#FBFAF8] font-sans antialiased ${floreal.variable}`}
+          style={bodyStyle}
         >
           <div className="relative min-h-screen w-full overflow-x-hidden">
             <div className="pointer-events-none absolute inset-0 overflow-hidden">

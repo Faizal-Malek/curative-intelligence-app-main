@@ -15,7 +15,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const supabase = getSupabaseBrowser()
     if (pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up')) return
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    // If already on onboarding, allow access immediately without checking status
+    if (pathname?.startsWith('/onboarding')) {
+      supabase.auth.getSession().then(({ data }: { data: any }) => {
+        if (!data.session) {
+          router.push('/sign-in')
+        } else {
+          setAuthorized(true)
+        }
+      })
+      return
+    }
+
+    // For all other routes, check session and onboarding status
+    supabase.auth.getSession().then(async ({ data }: { data: any }) => {
       if (!data.session) {
         router.push('/sign-in')
         return
@@ -24,31 +37,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const res = await fetch('/api/user/status')
         if (res.ok) {
           const { onboardingComplete } = await res.json()
-          // Allow access to onboarding routes whether completed or not
-          // Only redirect to onboarding if incomplete AND trying to access other routes
-          if (!onboardingComplete && !pathname?.startsWith('/onboarding')) {
+          // If onboarding not complete, redirect to onboarding
+          if (!onboardingComplete) {
             router.push('/onboarding')
           } else {
-            // User is either:
-            // 1. On onboarding page (completed or not) - allow access
-            // 2. Completed onboarding and on other pages - allow access
             setAuthorized(true)
           }
         } else {
-          // If status check fails, allow onboarding access
-          if (pathname?.startsWith('/onboarding')) {
-            setAuthorized(true)
-          } else {
-            router.push('/onboarding')
-          }
-        }
-      } catch {
-        // On error, allow onboarding access
-        if (pathname?.startsWith('/onboarding')) {
-          setAuthorized(true)
-        } else {
+          // If status check fails, redirect to onboarding
           router.push('/onboarding')
         }
+      } catch {
+        // On error, redirect to onboarding
+        router.push('/onboarding')
       }
     })
   }, [router, pathname])
