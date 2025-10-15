@@ -45,7 +45,7 @@ export default function SettingsPage() {
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="w-72 bg-white/90 backdrop-blur border-r border-[#EFE8D8] p-6 flex flex-col">
+      <aside className="w-72 bg-white/90 fixed backdrop-blur border-r border-[#EFE8D8] p-6 flex flex-col">
         <div className="mb-8 flex items-center space-x-3">
           <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-[#5D4037] to-[#3E2723] rounded-xl">
             <Sparkles className="w-6 h-6 text-white" />
