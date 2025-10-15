@@ -7,7 +7,6 @@ import { useForm, FormProvider, type Path } from 'react-hook-form';
 import {
   type BusinessOwnerFormData,
   type InfluencerFormData,
-  mapInfluencerToBrandPayload,
 } from '@/lib/validations/onboarding';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -253,11 +252,61 @@ export default function OnboardingWizard() {
         throw new Error('Please choose how you plan to use Curative before submitting.');
       }
 
-      let payload: BusinessOwnerFormData | ReturnType<typeof mapInfluencerToBrandPayload>;
+      let payload: Partial<BusinessOwnerFormData> | Partial<InfluencerFormData>;
       if (userType === 'influencer') {
-        payload = mapInfluencerToBrandPayload(data as InfluencerFormData);
+        const {
+          displayName,
+          niche,
+          bio,
+          targetAudience,
+          primaryPlatforms,
+          followerCount,
+          contentStyle,
+          postingFrequency,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } = data as InfluencerFormData;
+
+        payload = {
+          displayName,
+          niche,
+          bio,
+          targetAudience,
+          primaryPlatforms,
+          followerCount,
+          contentStyle,
+          postingFrequency,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } satisfies Partial<InfluencerFormData>;
       } else {
-        payload = data as BusinessOwnerFormData;
+        const {
+          brandName,
+          industry,
+          brandDescription,
+          targetDemographics,
+          customerPainPoints,
+          preferredChannels,
+          brandVoiceDescription,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } = data as BusinessOwnerFormData;
+
+        payload = {
+          brandName,
+          industry,
+          brandDescription,
+          targetDemographics,
+          customerPainPoints,
+          preferredChannels,
+          brandVoiceDescription,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } satisfies Partial<BusinessOwnerFormData>;
       }
 
       const response = await fetch('/api/onboarding/profile', {

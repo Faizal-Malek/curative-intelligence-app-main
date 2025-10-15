@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/Toast'
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter } from '@/components/ui/modal'
 import { useForm, FormProvider, FieldErrors } from 'react-hook-form';
-import { onboardingSchema, OnboardingFormData, businessOwnerSchema, influencerSchema, type BusinessOwnerFormData, type InfluencerFormData, mapInfluencerToBrandPayload } from '@/lib/validations/onboarding';
+import { onboardingSchema, OnboardingFormData, businessOwnerSchema, influencerSchema, type BusinessOwnerFormData, type InfluencerFormData } from '@/lib/validations/onboarding';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from './ProgressBar';
 import { Step1_Welcome } from './Step1_Welcome';
