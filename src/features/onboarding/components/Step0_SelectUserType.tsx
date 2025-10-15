@@ -79,13 +79,13 @@ export function Step0_SelectUserType({
 
   return (
     <section className="relative isolate space-y-10">
-      <header className="space-y-5 text-center">
+      <header className="space-y-5">
         <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-5 py-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B] shadow-sm">
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Getting started
         </span>
         <div className="space-y-4">
           <h1 className="font-display text-4xl leading-tight text-[#2F2626] sm:text-5xl">Choose your journey</h1>
-          <p className="mx-auto max-w-2xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
+          <p className="max-w-3xl text-base leading-relaxed text-[#5E4E4E] sm:text-lg">
             Pick the option that reflects how you plan to use Curative. We&apos;ll tailor each step to surface the most relevant strategy, messaging, and insights for your team.
           </p>
         </div>
