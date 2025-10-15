@@ -7,7 +7,6 @@ import { useForm, FormProvider, type Path } from 'react-hook-form';
 import {
   type BusinessOwnerFormData,
   type InfluencerFormData,
-  mapInfluencerToBrandPayload,
 } from '@/lib/validations/onboarding';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,6 +28,7 @@ export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [userType, setUserType] = useState<'business' | 'influencer' | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isReturningUser, setIsReturningUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -61,8 +61,7 @@ export default function OnboardingWizard() {
         const hasCompleted = payload?.hasCompletedOnboarding ?? payload?.onboardingComplete ?? false;
 
         if (hasCompleted) {
-          router.push('/dashboard');
-          return;
+          setIsReturningUser(true);
         }
 
         const incomingType = payload?.userType;
@@ -81,7 +80,7 @@ export default function OnboardingWizard() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   // We initialize RHF without a resolver since we handle manual step-by-step validation
   const methods = useForm<WizardFormValues>({
@@ -253,11 +252,61 @@ export default function OnboardingWizard() {
         throw new Error('Please choose how you plan to use Curative before submitting.');
       }
 
-      let payload: BusinessOwnerFormData | ReturnType<typeof mapInfluencerToBrandPayload>;
+      let payload: Partial<BusinessOwnerFormData> | Partial<InfluencerFormData>;
       if (userType === 'influencer') {
-        payload = mapInfluencerToBrandPayload(data as InfluencerFormData);
+        const {
+          displayName,
+          niche,
+          bio,
+          targetAudience,
+          primaryPlatforms,
+          followerCount,
+          contentStyle,
+          postingFrequency,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } = data as InfluencerFormData;
+
+        payload = {
+          displayName,
+          niche,
+          bio,
+          targetAudience,
+          primaryPlatforms,
+          followerCount,
+          contentStyle,
+          postingFrequency,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } satisfies Partial<InfluencerFormData>;
       } else {
-        payload = data as BusinessOwnerFormData;
+        const {
+          brandName,
+          industry,
+          brandDescription,
+          targetDemographics,
+          customerPainPoints,
+          preferredChannels,
+          brandVoiceDescription,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } = data as BusinessOwnerFormData;
+
+        payload = {
+          brandName,
+          industry,
+          brandDescription,
+          targetDemographics,
+          customerPainPoints,
+          preferredChannels,
+          brandVoiceDescription,
+          primaryGoal,
+          doRules,
+          dontRules,
+        } satisfies Partial<BusinessOwnerFormData>;
       }
 
       const response = await fetch('/api/onboarding/profile', {
@@ -465,20 +514,31 @@ export default function OnboardingWizard() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_500px_at_0%_0%,rgba(210,177,147,var(--radial-opacity)),transparent_60%)]"></div>
         <div className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(58,47,47,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(58,47,47,0.04)_1px,transparent_1px)] [background-size:28px_28px]"></div>
 
-        <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-8">
-          <div className="group relative mx-auto w-full max-w-6xl">
-            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#D2B193]/40 to-[#EFE8D8]/40 opacity-60 blur-3xl transition duration-500 group-hover:opacity-80"></div>
-            <div className="relative overflow-hidden rounded-3xl border border-white/25 bg-white/70 shadow-[0_24px_80px_rgba(58,47,47,0.18)] backdrop-blur-2xl">
-              <div className={cn(
-                "grid gap-0",
-                step === 0 ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.9fr)]"
-              )}>
-                <div className="p-6 sm:p-10">
-                  {/* Progress Bar */}
-                  <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
+          <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-8">
+            <div className="group relative mx-auto w-full max-w-6xl">
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#D2B193]/40 to-[#EFE8D8]/40 opacity-60 blur-3xl transition duration-500 group-hover:opacity-80"></div>
+              <div className="relative overflow-hidden rounded-3xl border border-white/25 bg-white/70 shadow-[0_24px_80px_rgba(58,47,47,0.18)] backdrop-blur-2xl">
+                <div
+                  className={cn(
+                    "grid gap-0",
+                    step === 0 ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.9fr)]"
+                  )}
+                >
+                  <div className="p-6 sm:p-10">
+                {/* Progress Bar */}
+                <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
 
-                  {/* Error Display */}
-                  {formError && (
+                {isReturningUser && (
+                  <div className="mt-6 rounded-xl border border-[#D2B193]/40 bg-[#F4E9DA]/70 p-4 text-sm text-[#5E5151] shadow-inner">
+                    <p className="font-semibold text-[#3A2F2F]">You're updating your brand profile</p>
+                    <p className="mt-1 text-sm text-[#6B5E5E]">
+                      Feel free to revisit any step to refresh your details. We'll save your changes once you complete the flow.
+                    </p>
+                  </div>
+                )}
+
+                {/* Error Display */}
+                {formError && (
                     <div className="mb-6 rounded-xl border border-red-200/80 bg-red-50/80 p-4 text-sm text-red-700 shadow-inner">
                       {formError}
                     </div>
