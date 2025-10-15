@@ -8,6 +8,24 @@ import { logger } from '@/lib/monitoring';
 import { createError } from '@/lib/error-handler';
 import { onboardingSchema } from "@/lib/validations/onboarding";
 
+function normalizeGuidelineRules(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+      .filter((entry) => entry.length > 0)
+      .join('\n')
+      .trim();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  return undefined;
+}
+
 async function handler(request: NextRequest, context: { user?: any, body?: any }) {
   const { user, body } = context;
   
@@ -36,13 +54,16 @@ async function handler(request: NextRequest, context: { user?: any, body?: any }
 
   // Persist based on userType. If influencer, store to InfluencerProfile; else BrandProfile
   if (body.userType === 'influencer') {
+    const doRules = normalizeGuidelineRules(body.doRules);
+    const dontRules = normalizeGuidelineRules(body.dontRules);
+
     const inf = {
       displayName: String(body.displayName || ''),
       niche: String(body.niche || ''),
       bio: String(body.bio || ''),
       contentStyle: String(body.contentStyle || ''),
-      doRules: body.doRules ?? null,
-      dontRules: body.dontRules ?? null,
+      doRules: doRules ?? null,
+      dontRules: dontRules ?? null,
     };
 
     if (!inf.displayName || !inf.niche || !inf.bio || !inf.contentStyle) {
@@ -55,7 +76,13 @@ async function handler(request: NextRequest, context: { user?: any, body?: any }
       create: { ...inf, userId: user.id },
     });
   } else {
-    const result = onboardingSchema.safeParse(body);
+    const normalizedBody = {
+      ...body,
+      doRules: normalizeGuidelineRules(body.doRules),
+      dontRules: normalizeGuidelineRules(body.dontRules),
+    };
+
+    const result = onboardingSchema.safeParse(normalizedBody);
     if (!result.success) {
       throw createError.validation('Invalid brand profile data', {
         details: result.error.flatten()
@@ -71,8 +98,8 @@ async function handler(request: NextRequest, context: { user?: any, body?: any }
         brandDescription: validatedData.brandDescription,
         brandVoiceDescription: validatedData.brandVoiceDescription,
         primaryGoal: validatedData.primaryGoal,
-        doRules: validatedData.doRules,
-        dontRules: validatedData.dontRules,
+        doRules: validatedData.doRules ?? null,
+        dontRules: validatedData.dontRules ?? null,
       },
       create: {
         brandName: validatedData.brandName,
@@ -80,8 +107,8 @@ async function handler(request: NextRequest, context: { user?: any, body?: any }
         brandDescription: validatedData.brandDescription,
         brandVoiceDescription: validatedData.brandVoiceDescription,
         primaryGoal: validatedData.primaryGoal,
-        doRules: validatedData.doRules,
-        dontRules: validatedData.dontRules,
+        doRules: validatedData.doRules ?? null,
+        dontRules: validatedData.dontRules ?? null,
         userId: user.id,
       },
     });
@@ -115,8 +142,8 @@ export const POST = withApiMiddleware(handler, {
     brandDescription: z.string().optional(),
     brandVoiceDescription: z.string().optional(),
     primaryGoal: z.string().optional(),
-    doRules: z.array(z.string()).optional(),
-    dontRules: z.array(z.string()).optional(),
+    doRules: z.union([z.string(), z.array(z.string())]).optional(),
+    dontRules: z.union([z.string(), z.array(z.string())]).optional(),
   }),
   rateLimitConfig: {
     maxRequests: 5,
