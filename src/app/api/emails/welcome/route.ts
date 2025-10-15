@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WelcomeEmailService } from '@/services/email';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Resend is configured
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        { error: 'Email service is not configured' },
+        { status: 503 }
+      );
+    }
+
+    // Dynamic import to avoid build-time issues
+    const { WelcomeEmailService } = await import('@/services/email');
+    
     const body = await request.json();
     const { email, firstName, userType } = body;
 

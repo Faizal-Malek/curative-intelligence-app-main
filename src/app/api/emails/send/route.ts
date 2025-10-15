@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NotificationEmailService } from '@/services/email';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Resend is configured
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        { error: 'Email service is not configured' },
+        { status: 503 }
+      );
+    }
+
+    // Dynamic import to avoid build-time issues
+    const { NotificationEmailService } = await import('@/services/email');
+    
     const body = await request.json();
     const { to, subject, html, text } = body;
 
@@ -54,6 +64,17 @@ export async function POST(request: NextRequest) {
 // Bulk email endpoint
 export async function PUT(request: NextRequest) {
   try {
+    // Check if Resend is configured
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        { error: 'Email service is not configured' },
+        { status: 503 }
+      );
+    }
+
+    // Dynamic import to avoid build-time issues
+    const { NotificationEmailService } = await import('@/services/email');
+    
     const body = await request.json();
     const { emails } = body;
 

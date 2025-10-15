@@ -1,4 +1,4 @@
-import { resend, emailConfig, generateOTPEmail, generateWelcomeEmail, generatePasswordResetEmail } from '@/lib/resend';
+import { getResend, emailConfig, generateOTPEmail, generateWelcomeEmail, generatePasswordResetEmail } from '@/lib/resend';
 
 // OTP Service
 export class OTPService {
@@ -18,7 +18,7 @@ export class OTPService {
 
       const emailTemplate = generateOTPEmail(otp, firstName);
 
-      const result = await resend.emails.send({
+      const result = await getResend().emails.send({
         from: emailConfig.from,
         to: [email],
         subject: emailTemplate.subject,
@@ -77,7 +77,7 @@ export class WelcomeEmailService {
     try {
       const emailTemplate = generateWelcomeEmail(firstName, userType);
 
-      const result = await resend.emails.send({
+      const result = await getResend().emails.send({
         from: emailConfig.from,
         to: [email],
         subject: emailTemplate.subject,
@@ -107,7 +107,7 @@ export class PasswordResetService {
       const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
       const emailTemplate = generatePasswordResetEmail(resetLink, firstName);
 
-      const result = await resend.emails.send({
+      const result = await getResend().emails.send({
         from: emailConfig.from,
         to: [email],
         subject: emailTemplate.subject,
@@ -140,7 +140,7 @@ export class NotificationEmailService {
     text?: string;
   }): Promise<{ success: boolean; error?: string }> {
     try {
-      const result = await resend.emails.send({
+      const result = await getResend().emails.send({
         from: emailConfig.from,
         to: [to],
         subject,
@@ -169,7 +169,7 @@ export class NotificationEmailService {
 
     for (const email of emails) {
       try {
-        const result = await resend.emails.send({
+        const result = await getResend().emails.send({
           from: emailConfig.from,
           to: [email.to],
           subject: email.subject,

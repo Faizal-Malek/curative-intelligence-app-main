@@ -6,8 +6,6 @@
 const { Resend } = require('resend');
 require('dotenv').config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 async function testResendSetup() {
   console.log('🚀 Testing Resend Email Setup...\n');
 
@@ -17,6 +15,8 @@ async function testResendSetup() {
     console.log('💡 Add RESEND_API_KEY to your .env.local file\n');
     return;
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   // Check if from email is set
   const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
