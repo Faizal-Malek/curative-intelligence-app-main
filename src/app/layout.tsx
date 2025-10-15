@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local"; // Use localFont for custom fonts
 import "./globals.css";
 import { ToastProvider } from '@/components/ui/Toast'
+import { cn } from "@/lib/utils";
 
 // --- Simple Explanation ---
 // We are setting up the two fonts required by our style guide.
