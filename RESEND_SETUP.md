@@ -243,7 +243,7 @@ import { OTPService } from '@/services/email';
 const otpResult = await OTPService.sendOTP(email, firstName);
 
 // Step 2: Verify OTP
-const verifyResult = OTPService.verifyOTP(email, userProvidedOTP);
+const verifyResult = await OTPService.verifyOTP(email, userProvidedOTP);
 
 if (verifyResult.valid) {
   // Email verified, continue with registration

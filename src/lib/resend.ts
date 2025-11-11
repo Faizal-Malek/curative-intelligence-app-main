@@ -1,7 +1,65 @@
 import { Resend } from 'resend';
 
-// Lazy initialization of Resend to avoid build-time errors
+type SenderConfig = {
+  from: string;
+  domain: string;
+};
+
+const PLACEHOLDER_DOMAIN_REGEX = /(^|@)(yourdomain\.com)$/i;
+
 let _resend: Resend | null = null;
+let _senderConfig: SenderConfig | null = null;
+
+function resolveSenderConfig(): SenderConfig {
+  const rawFrom = process.env.RESEND_FROM_EMAIL;
+  if (!rawFrom) {
+    throw new Error('RESEND_FROM_EMAIL is not defined in environment variables');
+  }
+
+  if (!rawFrom.includes('@')) {
+    throw new Error(`RESEND_FROM_EMAIL must be a valid email address. Received "${rawFrom}".`);
+  }
+
+  if (PLACEHOLDER_DOMAIN_REGEX.test(rawFrom)) {
+    throw new Error(
+      'RESEND_FROM_EMAIL is still using the placeholder domain (yourdomain.com). Configure a verified Resend sender email before sending mail.',
+    );
+  }
+
+  const [localPart, domainPart] = rawFrom.split('@');
+  if (!localPart || !domainPart) {
+    throw new Error(`RESEND_FROM_EMAIL must be a valid email address. Received "${rawFrom}".`);
+  }
+
+  const configuredDomain = process.env.RESEND_DOMAIN;
+  const senderDomain = domainPart.toLowerCase();
+
+  if (configuredDomain) {
+    if (PLACEHOLDER_DOMAIN_REGEX.test(configuredDomain)) {
+      throw new Error(
+        'RESEND_DOMAIN is still set to the placeholder (yourdomain.com). Update it to match your verified sender domain.',
+      );
+    }
+
+    if (configuredDomain.toLowerCase() !== senderDomain) {
+      throw new Error(
+        `RESEND_FROM_EMAIL domain (${senderDomain}) does not match RESEND_DOMAIN (${configuredDomain}). Update your environment variables to use the same verified domain.`,
+      );
+    }
+  }
+
+  return {
+    from: rawFrom,
+    domain: configuredDomain ? configuredDomain.toLowerCase() : senderDomain,
+  };
+}
+
+export const getSenderConfig = (): SenderConfig => {
+  if (!_senderConfig) {
+    _senderConfig = resolveSenderConfig();
+  }
+  return _senderConfig;
+};
 
 export const getResend = (): Resend => {
   if (!_resend) {
@@ -10,14 +68,21 @@ export const getResend = (): Resend => {
     }
     _resend = new Resend(process.env.RESEND_API_KEY);
   }
+
+  // Ensure sender configuration is valid whenever the client is requested
+  getSenderConfig();
+
   return _resend;
 };
 
-// Email templates and configurations
+// Email templates and configurations (accessed lazily via getters)
 export const emailConfig = {
-  from: process.env.RESEND_FROM_EMAIL || 'onboarding@yourdomain.com',
-  // You'll need to replace this with your verified domain from Resend
-  domain: process.env.RESEND_DOMAIN || 'yourdomain.com',
+  get from() {
+    return getSenderConfig().from;
+  },
+  get domain() {
+    return getSenderConfig().domain;
+  },
 };
 
 // OTP Email Template

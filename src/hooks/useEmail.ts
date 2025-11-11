@@ -5,6 +5,9 @@ interface EmailResponse {
   message?: string;
   error?: string;
   expired?: boolean;
+  locked?: boolean;
+  retryAfterSeconds?: number;
+  attemptsRemaining?: number;
 }
 
 export const useEmail = () => {
@@ -28,10 +31,18 @@ export const useEmail = () => {
 
       if (!response.ok) {
         setError(data.error || 'Failed to send OTP');
-        return { success: false, error: data.error };
+        return {
+          success: false,
+          error: data.error,
+          retryAfterSeconds: data.retryAfterSeconds,
+        };
       }
 
-      return { success: true, message: data.message };
+      return {
+        success: true,
+        message: data.message,
+        retryAfterSeconds: data.retryAfterSeconds,
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP';
       setError(errorMessage);
@@ -58,14 +69,19 @@ export const useEmail = () => {
 
       if (!response.ok) {
         setError(data.error || 'Failed to verify OTP');
-        return { 
-          success: false, 
-          error: data.error, 
-          expired: data.expired 
+        return {
+          success: false,
+          error: data.error,
+          expired: data.expired,
+          locked: data.locked,
+          attemptsRemaining: data.attemptsRemaining,
         };
       }
 
-      return { success: true, message: data.message };
+      return {
+        success: true,
+        message: data.message,
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to verify OTP';
       setError(errorMessage);

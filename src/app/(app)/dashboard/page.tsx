@@ -1,27 +1,13 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  LayoutDashboard,
-  CalendarDays,
-  FolderKanban,
-  BarChart3,
-  Settings,
-  Sparkles,
-  Lightbulb,
-  ArrowUpRight,
-  Clock3,
-} from 'lucide-react';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Sparkles, Lightbulb, ArrowUpRight, Clock3 } from "lucide-react";
 
-import UserMenu from '@/components/auth/UserMenu';
-import LoadingOverlay from '@/components/ui/LoadingOverlay';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ActivityItem } from '@/components/dashboard/ActivityItem';
-import { cn } from '@/lib/utils';
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ActivityItem } from "@/components/dashboard/ActivityItem";
 
 type DashboardStats = {
   scheduledPosts: number;
@@ -29,60 +15,16 @@ type DashboardStats = {
   engagementDelta: number;
 };
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/vault', label: 'Content Vault', icon: FolderKanban },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-];
-
-function NavLink({ href, icon: Icon, label, isActive }: NavItem & { isActive: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors duration-200',
-        isActive
-          ? 'bg-[#3A2F2F] text-white shadow-[0_20px_45px_rgba(58,47,47,0.25)]'
-          : 'text-[#6B5E5E] hover:bg-[#F2E7DA] hover:text-[#2F2626]'
-      )}
-    >
-      <Icon className="h-5 w-5" aria-hidden="true" />
-      <span>{label}</span>
-    </Link>
-  );
-}
-
 export default function DashboardPage() {
   const router = useRouter();
-  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [welcomeMessage, setWelcomeMessage] = useState('Welcome back!');
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
-    const fetchWelcomeMessage = async () => {
-      try {
-        const response = await fetch('/api/user/welcome-message');
-        if (response.ok) {
-          const data = await response.json();
-          setWelcomeMessage(data.message);
-        }
-      } catch (fetchError) {
-        console.error('Failed to fetch welcome message', fetchError);
-      }
-    };
-
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/dashboard/stats');
+        const res = await fetch("/api/dashboard/stats");
         if (res.ok) {
           const data = await res.json();
           setStats({
@@ -92,11 +34,9 @@ export default function DashboardPage() {
           });
         }
       } catch (fetchError) {
-        console.error('Failed to fetch dashboard stats', fetchError);
+        console.error("Failed to fetch dashboard stats", fetchError);
       }
     };
-
-    fetchWelcomeMessage();
     fetchStats();
   }, []);
 
@@ -105,40 +45,48 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/content/generate-batch', {
-        method: 'POST',
+      const response = await fetch("/api/content/generate-batch", {
+        method: "POST",
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to start content generation.' }));
-        throw new Error(errorData.message || 'Failed to start content generation.');
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Failed to start content generation." }));
+        throw new Error(
+          errorData.message || "Failed to start content generation."
+        );
       }
 
       const { batchId } = await response.json();
       router.push(`/plan-review/${batchId}`);
     } catch (generateError) {
-      setError(generateError instanceof Error ? generateError.message : 'An unknown error occurred.');
+      setError(
+        generateError instanceof Error
+          ? generateError.message
+          : "An unknown error occurred."
+      );
       setIsLoading(false);
     }
   };
 
   const overviewCards = [
     {
-      title: 'Scheduled Posts',
-      value: stats ? stats.scheduledPosts.toLocaleString() : '—',
-      helper: 'Next post Friday at 10:00',
+      title: "Scheduled Posts",
+      value: stats ? stats.scheduledPosts.toLocaleString() : "—",
+      helper: "Next post Friday at 10:00",
       icon: Clock3,
     },
     {
-      title: 'Ideas in Vault',
-      value: stats ? stats.ideasInVault.toLocaleString() : '—',
-      helper: 'Fresh inspiration waiting',
+      title: "Ideas in Vault",
+      value: stats ? stats.ideasInVault.toLocaleString() : "—",
+      helper: "Fresh inspiration waiting",
       icon: Lightbulb,
     },
     {
-      title: 'Engagement (7d)',
-      value: stats ? `${stats.engagementDelta}%` : '—',
-      helper: 'Across all connected channels',
+      title: "Engagement (7d)",
+      value: stats ? `${stats.engagementDelta}%` : "—",
+      helper: "Across all connected channels",
       icon: ArrowUpRight,
     },
   ];
@@ -146,171 +94,164 @@ export default function DashboardPage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#F8F2EA] via-[#FDF9F3] to-[#F0E3D2] font-montserrat text-[#2D2424]">
       <LoadingOverlay show={isLoading} label="Generating content" />
-      <div className="flex min-h-screen">
-        <aside className="hidden w-72 flex-col justify-between border-r border-[#EADCCE] bg-white/80 backdrop-blur md:flex">
-          <div>
-            <div className="flex items-center justify-between border-b border-[#EADCCE] px-6 py-6">
-              <h1 className="text-2xl font-bold tracking-tight">Curative</h1>
-              <Sparkles className="h-5 w-5 text-[#D2B193]" aria-hidden="true" />
-            </div>
-            <nav className="space-y-2 px-4 py-6">
-              {NAV_ITEMS.map((item) => (
-                <NavLink key={item.href} {...item} isActive={pathname.startsWith(item.href)} />
-              ))}
-            </nav>
-          </div>
-          <nav className="border-t border-[#EADCCE] px-4 py-6">
-            <NavLink href="/settings" label="Settings" icon={Settings} isActive={pathname.startsWith('/settings')} />
-          </nav>
-        </aside>
-
-        <main className="relative flex-1 overflow-y-auto">
-          <header className="sticky top-0 z-10 border-b border-[#EADCCE] bg-white/80 backdrop-blur">
-            <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-              <div className="space-y-1">
-                <p className="text-sm uppercase tracking-[0.4em] text-[#B89B7B]">Welcome back</p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-4">
-                  <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{welcomeMessage}</h2>
-                  <span className="text-sm text-[#7A6F6F]">Your content command center</span>
-                </div>
-              </div>
-              <UserMenu />
-            </div>
-          </header>
-
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10">
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <Card
-                padding="lg"
-                className="border-transparent bg-gradient-to-br from-[#FCF2E4] via-[#F7E7D3] to-[#F1DBC0] text-[#2F2626] shadow-[0_32px_90px_rgba(58,47,47,0.18)]"
-              >
-                <div className="flex flex-col gap-8">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-3">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B]">
-                        Content Dashboard
-                      </span>
-                      <h3 className="text-3xl font-floreal leading-tight sm:text-4xl">Spark your next big campaign</h3>
-                      <p className="max-w-xl text-base leading-relaxed text-[#5E4E4E]">
-                        Generate ready-to-edit concepts, review performance, and keep momentum with curated prompts tailored to your goals.
-                      </p>
-                    </div>
-                    <Sparkles className="h-8 w-8 text-[#D2B193]" aria-hidden="true" />
-                  </div>
-
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <Button onClick={handleGenerateContent} disabled={isLoading} className="w-full sm:w-auto">
-                      {isLoading ? 'Generating…' : 'Generate New Content Ideas'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      className="w-full sm:w-auto"
-                      onClick={() => router.push('/vault')}
-                      disabled={isLoading}
-                    >
-                      Browse Content Vault
-                    </Button>
-                  </div>
-
-                  {error && (
-                    <div className="rounded-2xl border border-[#FEE4E2] bg-[#FEF3F2] px-4 py-3 text-sm text-[#B42318]">
-                      <p className="font-semibold">Something went wrong.</p>
-                      <p className="mt-1 leading-relaxed">{error}</p>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card
-                padding="lg"
-                className="border-transparent bg-white/90 shadow-[0_24px_60px_rgba(58,47,47,0.16)]"
-              >
-                <div className="flex flex-col gap-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-sm uppercase tracking-[0.32em] text-[#B89B7B]">Account Status</h3>
-                      <p className="text-3xl font-semibold text-[#C49B75]">Free</p>
-                    </div>
-                    <span className="rounded-full bg-[#F3E6D6] px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#2F2626]">
-                      Upgrade
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-[#5E4E4E]">
-                    Unlock unlimited generations, smart scheduling, and advanced analytics with Curative Pro.
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <Card
+            padding="lg"
+            className="border-transparent bg-gradient-to-br from-[#FCF2E4] via-[#F7E7D3] to-[#F1DBC0] text-[#2F2626] shadow-[0_32px_90px_rgba(58,47,47,0.18)]"
+          >
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[#B89B7B]">
+                    Content Dashboard
+                  </span>
+                  <h3 className="text-3xl font-floreal leading-tight sm:text-4xl">
+                    Spark your next big campaign
+                  </h3>
+                  <p className="max-w-xl text-base leading-relaxed text-[#5E4E4E]">
+                    Generate ready-to-edit concepts, review performance, and
+                    keep momentum with curated prompts tailored to your goals.
                   </p>
-                  <Button variant="secondary" onClick={() => router.push('/settings')} className="w-full">
-                    See plans
-                  </Button>
                 </div>
-              </Card>
-            </section>
+                <Sparkles
+                  className="h-8 w-8 text-[#D2B193]"
+                  aria-hidden="true"
+                />
+              </div>
 
-            <section className="grid gap-6 md:grid-cols-3">
-              {overviewCards.map(({ title, value, helper, icon: Icon }) => (
-                <Card
-                  key={title}
-                  padding="lg"
-                  className="border-transparent bg-white/90 shadow-[0_20px_55px_rgba(58,47,47,0.12)]"
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button
+                  onClick={handleGenerateContent}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.32em] text-[#B89B7B]">{title}</p>
-                      <p className="text-3xl font-semibold text-[#2F2626]">{value}</p>
-                      <p className="text-sm text-[#6B5E5E]">{helper}</p>
-                    </div>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                  </div>
-                </Card>
-              ))}
-            </section>
+                  {isLoading ? "Generating…" : "Generate New Content Ideas"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="w-full sm:w-auto"
+                  onClick={() => router.push("/vault")}
+                  disabled={isLoading}
+                >
+                  Browse Content Vault
+                </Button>
+              </div>
 
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <Card
-                padding="lg"
-                className="border-transparent bg-white/90 shadow-[0_26px_70px_rgba(58,47,47,0.14)]"
-              >
-                <h3 className="text-lg font-semibold text-[#2F2626]">Recent Activity</h3>
-                <ul className="mt-5 space-y-3">
-                  <ActivityItem>3 posts were generated and added to the vault</ActivityItem>
-                  <ActivityItem>1 post scheduled for Friday at 10:00</ActivityItem>
-                  <ActivityItem>Brand profile updated</ActivityItem>
-                </ul>
-              </Card>
-
-              <Card
-                padding="lg"
-                className="border-transparent bg-gradient-to-br from-white via-[#F9EFE0] to-[#EEDBC4] shadow-[0_24px_60px_rgba(58,47,47,0.16)]"
-              >
-                <h3 className="text-lg font-semibold text-[#2F2626]">Quick Actions</h3>
-                <div className="mt-5 flex flex-col gap-3">
-                  <Button
-                    variant="secondary"
-                    className="justify-start"
-                    onClick={() => router.push('/onboarding')}
-                  >
-                    Update Brand Profile
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="justify-start"
-                    onClick={() => router.push('/calendar')}
-                  >
-                    Open Calendar
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="justify-start"
-                    onClick={() => router.push('/vault')}
-                  >
-                    Browse Content Vault
-                  </Button>
+              {error && (
+                <div className="rounded-2xl border border-[#FEE4E2] bg-[#FEF3F2] px-4 py-3 text-sm text-[#B42318]">
+                  <p className="font-semibold">Something went wrong.</p>
+                  <p className="mt-1 leading-relaxed">{error}</p>
                 </div>
-              </Card>
-            </section>
-          </div>
-        </main>
+              )}
+            </div>
+          </Card>
+
+          <Card
+            padding="lg"
+            className="border-transparent bg-white/90 shadow-[0_24px_60px_rgba(58,47,47,0.16)]"
+          >
+            <div className="flex flex-col gap-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-sm uppercase tracking-[0.32em] text-[#B89B7B]">
+                    Account Status
+                  </h3>
+                  <p className="text-3xl font-semibold text-[#C49B75]">Free</p>
+                </div>
+                <span className="rounded-full bg-[#F3E6D6] px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#2F2626]">
+                  Upgrade
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-[#5E4E4E]">
+                Unlock unlimited generations, smart scheduling, and advanced
+                analytics with Curative Pro.
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => router.push("/settings")}
+                className="w-full"
+              >
+                See plans
+              </Button>
+            </div>
+          </Card>
+        </section>
+
+        <section className="grid gap-6 md:grid-cols-3">
+          {overviewCards.map(({ title, value, helper, icon: Icon }) => (
+            <Card
+              key={title}
+              padding="lg"
+              className="border-transparent bg-white/90 shadow-[0_20px_55px_rgba(58,47,47,0.12)]"
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.32em] text-[#B89B7B]">
+                    {title}
+                  </p>
+                  <p className="text-3xl font-semibold text-[#2F2626]">
+                    {value}
+                  </p>
+                  <p className="text-sm text-[#6B5E5E]">{helper}</p>
+                </div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F3E6D6] text-[#2F2626] shadow-inner">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+              </div>
+            </Card>
+          ))}
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <Card
+            padding="lg"
+            className="border-transparent bg-white/90 shadow-[0_26px_70px_rgba(58,47,47,0.14)]"
+          >
+            <h3 className="text-lg font-semibold text-[#2F2626]">
+              Recent Activity
+            </h3>
+            <ul className="mt-5 space-y-3">
+              <ActivityItem>
+                3 posts were generated and added to the vault
+              </ActivityItem>
+              <ActivityItem>1 post scheduled for Friday at 10:00</ActivityItem>
+              <ActivityItem>Brand profile updated</ActivityItem>
+            </ul>
+          </Card>
+
+          <Card
+            padding="lg"
+            className="border-transparent bg-gradient-to-br from-white via-[#F9EFE0] to-[#EEDBC4] shadow-[0_24px_60px_rgba(58,47,47,0.16)]"
+          >
+            <h3 className="text-lg font-semibold text-[#2F2626]">
+              Quick Actions
+            </h3>
+            <div className="mt-5 flex flex-col gap-3">
+              <Button
+                variant="secondary"
+                className="justify-start"
+                onClick={() => router.push("/onboarding")}
+              >
+                Update Brand Profile
+              </Button>
+              <Button
+                variant="secondary"
+                className="justify-start"
+                onClick={() => router.push("/calendar")}
+              >
+                Open Calendar
+              </Button>
+              <Button
+                variant="secondary"
+                className="justify-start"
+                onClick={() => router.push("/vault")}
+              >
+                Browse Content Vault
+              </Button>
+            </div>
+          </Card>
+        </section>
       </div>
     </div>
   );

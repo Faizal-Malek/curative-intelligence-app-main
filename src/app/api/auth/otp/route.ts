@@ -37,8 +37,11 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error || 'Failed to send OTP' },
-        { status: 500 }
+        {
+          error: result.error || 'Failed to send OTP',
+          retryAfterSeconds: result.retryAfterSeconds,
+        },
+        { status: result.retryAfterSeconds ? 429 : 500 }
       );
     }
 
@@ -58,15 +61,6 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Check if Resend is configured
-    if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json(
-        { error: 'Email service is not configured' },
-        { status: 503 }
-      );
-    }
-
-    // Dynamic import to avoid build-time issues
     const { OTPService } = await import('@/services/email');
     
     const body = await request.json();
@@ -80,15 +74,23 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify OTP
-    const verification = OTPService.verifyOTP(email, otp);
+    const verification = await OTPService.verifyOTP(email, otp);
 
     if (!verification.valid) {
+      const errorMessage = verification.expired
+        ? 'OTP has expired'
+        : verification.locked
+        ? 'Too many incorrect attempts. Please request a new verification code.'
+        : 'Invalid OTP';
+
       return NextResponse.json(
-        { 
-          error: verification.expired ? 'OTP has expired' : 'Invalid OTP',
-          expired: verification.expired 
+        {
+          error: errorMessage,
+          expired: verification.expired ?? false,
+          locked: verification.locked ?? false,
+          attemptsRemaining: verification.attemptsRemaining,
         },
-        { status: 400 }
+        { status: verification.locked ? 423 : 400 }
       );
     }
 

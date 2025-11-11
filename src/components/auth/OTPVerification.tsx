@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useEmail } from '@/hooks/useEmail';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,9 @@ export const OTPVerification = ({
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const { sendOTP, verifyOTP, isLoading, error } = useEmail();
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const { sendOTP, verifyOTP, isLoading, error, clearError } = useEmail();
 
   // Countdown timer for resend functionality
   useEffect(() => {
@@ -33,43 +35,65 @@ export const OTPVerification = ({
     }
   }, [countdown]);
 
-  const handleSendOTP = async () => {
+  const handleSendOTP = useCallback(async () => {
+    clearError();
+    setIsLocked(false);
+    setAttemptsRemaining(null);
     const result = await sendOTP(email, firstName);
     if (result.success) {
-      setCountdown(60); // 60 seconds before resend is allowed
+      setCountdown(result.retryAfterSeconds ?? 60);
+      setOtp('');
+      setShowSuccess(false);
+    } else if (typeof result.retryAfterSeconds === 'number') {
+      setCountdown(result.retryAfterSeconds);
     }
-  };
+  }, [clearError, email, firstName, sendOTP]);
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyOTP = useCallback(async () => {
     if (otp.length !== 6) {
       return;
     }
 
+    clearError();
     const result = await verifyOTP(email, otp);
     if (result.success) {
       setShowSuccess(true);
       setTimeout(() => {
         onVerified();
       }, 1500);
+      return;
     }
-  };
+
+    if (result.locked) {
+      setIsLocked(true);
+      setAttemptsRemaining(0);
+      return;
+    }
+
+    if (typeof result.attemptsRemaining === 'number') {
+      setAttemptsRemaining(result.attemptsRemaining);
+    }
+  }, [clearError, email, onVerified, otp, verifyOTP]);
 
   const handleOTPChange = (value: string) => {
     const numericValue = value.replace(/\D/g, '').slice(0, 6);
+    if (error) {
+      clearError();
+    }
     setOtp(numericValue);
   };
 
   // Auto-verify when 6 digits are entered
   useEffect(() => {
-    if (otp.length === 6) {
+    if (otp.length === 6 && !isLocked && !isLoading) {
       handleVerifyOTP();
     }
-  }, [otp]);
+  }, [handleVerifyOTP, isLocked, isLoading, otp]);
 
   // Send initial OTP on component mount
   useEffect(() => {
     handleSendOTP();
-  }, []);
+  }, [handleSendOTP]);
 
   if (showSuccess) {
     return (
@@ -105,11 +129,24 @@ export const OTPVerification = ({
             placeholder="000000"
             className="text-center text-2xl tracking-widest"
             maxLength={6}
-            disabled={isLoading}
+            disabled={isLoading || isLocked}
           />
           <p className="text-xs text-[#2F2626]/50 mt-1">
             Code expires in 10 minutes
           </p>
+          {attemptsRemaining !== null && !isLocked && (
+            <p className="text-xs text-[#2F2626]/60 mt-1">
+              {attemptsRemaining} attempt{attemptsRemaining === 1 ? '' : 's'} remaining before lockout.
+            </p>
+          )}
+          {isLocked && (
+            <div className="flex items-start gap-2 border border-amber-200 bg-amber-50 rounded-md p-2 mt-2">
+              <XCircle className="h-4 w-4 text-amber-600 mt-1" />
+              <p className="text-amber-700 text-sm">
+                Too many incorrect attempts. Request a new code to try again.
+              </p>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -124,7 +161,7 @@ export const OTPVerification = ({
         <div className="flex flex-col space-y-3">
           <Button
             onClick={handleVerifyOTP}
-            disabled={otp.length !== 6 || isLoading}
+            disabled={otp.length !== 6 || isLoading || isLocked}
             className="w-full bg-[#2F2626] hover:bg-[#2F2626]/90"
           >
             {isLoading ? (
