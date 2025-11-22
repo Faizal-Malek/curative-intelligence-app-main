@@ -4,6 +4,10 @@
 
 const { spawn } = require('node:child_process');
 const path = require('node:path');
+const { loadEnvConfig } = require('@next/env');
+
+// Mirror Next.js env loading so values from .env/.env.local are available here too.
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== 'production');
 
 const candidates = [
   { key: 'DATABASE_URL', value: process.env.DATABASE_URL },
@@ -74,8 +78,9 @@ if (originKey !== 'DATABASE_URL') {
   console.info('\nℹ️  Normalised DATABASE_URL by appending sslmode=require for Supabase.');
 }
 
-const prismaBin = path.join('node_modules', '.bin', process.platform === 'win32' ? 'prisma.cmd' : 'prisma');
-const child = spawn(prismaBin, ['generate'], {
+// Spawn Prisma via Node directly to avoid Windows .cmd quirks.
+const prismaCli = path.join(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js');
+const child = spawn(process.execPath, [prismaCli, 'generate'], {
   stdio: 'inherit',
   env: { ...process.env, DATABASE_URL: connection },
 });

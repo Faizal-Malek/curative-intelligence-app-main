@@ -10,6 +10,7 @@ export default function SignInPage() {
   const supabase = getSupabaseBrowser()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [otpCode, setOtpCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<'password' | 'otp'>('password')
@@ -18,17 +19,25 @@ export default function SignInPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    if (mode === 'otp') {
-      const { error } = await supabase.auth.verifyOtp({ email, token: password, type: 'email' })
-      if (error) setError(error.message)
-      else window.location.href = '/dashboard'
+
+    try {
+      if (mode === 'otp') {
+        const { error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'email' })
+        if (error) throw error
+        window.location.href = '/dashboard'
+        return
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      window.location.href = '/dashboard'
+    } catch (err: any) {
+      const message =
+        err?.message || 'Unable to reach the authentication service. Please try again in a moment.'
+      setError(message)
+    } finally {
       setLoading(false)
-      return
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
-    else window.location.href = '/dashboard'
-    setLoading(false)
   }
 
   return (
@@ -50,49 +59,82 @@ export default function SignInPage() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="text-sm font-medium text-[#3A2F2F]">Email address</label>
-            <Input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
           </div>
           {mode === 'password' ? (
             <div>
               <label className="text-sm font-medium text-[#3A2F2F]">Password</label>
-              <Input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
               <div className="mt-2 text-xs text-right">
                 <a href="/reset-password" className="underline text-[#7A6F6F]">Forgot password?</a>
               </div>
             </div>
           ) : (
             <div>
-              <label className="text-sm font-medium text-[#3A2F2F]">Enter the 6‑digit code</label>
-              <Input type="text" placeholder="123456" value={password} onChange={e => setPassword(e.target.value)} required />
+              <label className="text-sm font-medium text-[#3A2F2F]">Enter the 6-digit code</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="123456"
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value)}
+                required
+              />
             </div>
           )}
           {error && <div className="text-sm text-red-600">{error}</div>}
-          <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Signing in…' : 'Continue'}</Button>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (mode === 'otp' ? 'Verifying...' : 'Signing in...') : 'Continue'}
+          </Button>
         </form>
 
         <div className="mt-4 text-center text-sm text-[#7A6F6F]">
           {mode === 'password' ? (
             <button
               className="underline"
+              type="button"
               onClick={async () => {
                 if (!email) { setError('Enter your email first'); return }
                 setLoading(true)
                 setError(null)
-                const { error } = await supabase.auth.signInWithOtp({ email })
-                if (error) setError(error.message)
-                else setMode('otp')
-                setLoading(false)
+                setOtpCode('')
+                try {
+                  const { error } = await supabase.auth.signInWithOtp({ email })
+                  if (error) throw error
+                  setMode('otp')
+                } catch (err: any) {
+                  const message =
+                    err?.message || 'Unable to send the code right now. Please try again shortly.'
+                  setError(message)
+                } finally {
+                  setLoading(false)
+                }
               }}
             >
               Continue with email code
             </button>
           ) : (
-            <button className="underline" onClick={() => setMode('password')}>Use password instead</button>
+            <button className="underline" type="button" onClick={() => setMode('password')}>
+              Use password instead
+            </button>
           )}
         </div>
 
         <p className="mt-6 text-center text-sm text-[#7A6F6F]">
-          Don’t have an account? <a href="/sign-up" className="underline">Sign up</a>
+          Don't have an account? <a href="/sign-up" className="underline">Sign up</a>
         </p>
       </div>
     </div>
