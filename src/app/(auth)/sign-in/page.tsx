@@ -72,7 +72,7 @@ export default function SignInPage() {
               <label className="text-sm font-medium text-[#3A2F2F]">Password</label>
               <Input
                 type="password"
-                placeholder="••••••••"
+                placeholder="********"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
