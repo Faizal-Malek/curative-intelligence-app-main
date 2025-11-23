@@ -429,93 +429,158 @@ export default function OnboardingWizard() {
 
   return (
     <FormProvider {...methods}>
-      <div className="min-h-screen w-full bg-[#f7f3ed]">
+      <div className="min-h-screen w-full bg-gradient-to-br from-[#FBFAF8] via-[#F7F3ED] to-[#F3EDE5]">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-[0_16px_60px_rgba(58,47,47,0.16)] backdrop-blur-xl">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-xs uppercase tracking-[0.35em] text-[#B89B7B]">Onboarding</p>
-                <h1 className="text-2xl font-floreal text-[#2F2626] sm:text-3xl">Set up your workspace</h1>
-                <p className="max-w-2xl text-sm text-[#6B5E5E]">
-                  Choose your path and share a few details. We’ll tailor brand voice, goals, and content to you.
+          <div className="animate-fade-in rounded-3xl border border-white/60 bg-white/90 p-6 shadow-[0_20px_70px_rgba(58,47,47,0.14)] backdrop-blur-2xl transition-all duration-500 hover:shadow-[0_25px_80px_rgba(58,47,47,0.18)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-[#B89B7B]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#D2B193] animate-pulse"></span>
+                  Onboarding
+                </p>
+                <h1 className="text-3xl font-floreal text-[#2F2626] sm:text-4xl leading-tight">Set up your workspace</h1>
+                <p className="max-w-2xl text-sm text-[#6B5E5E] leading-relaxed">
+                  Choose your path and share a few details. We'll tailor brand voice, goals, and content to you.
                 </p>
               </div>
-              <div className="rounded-xl bg-[#2F2626] px-3 py-2 text-xs font-medium text-white shadow-md">
+              <div className="group rounded-xl bg-gradient-to-br from-[#2F2626] to-[#3A2F2F] px-4 py-2.5 text-xs font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
                 {userType ? `Path: ${userType === 'business' ? 'Business Owner' : 'Content Creator'}` : 'No path selected'}
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-5">
               <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.9fr)]">
-            <section className="rounded-2xl border border-white/70 bg-white/90 p-5 shadow-[0_14px_50px_rgba(58,47,47,0.12)] backdrop-blur-xl">
-              {isReturningUser && (
-                <div className="mb-4 flex items-center justify-between rounded-xl bg-[#F7EADB] px-4 py-3 text-sm text-[#5E5151] shadow-inner">
-                  <span className="font-semibold text-[#3A2F2F]">Updating your profile</span>
-                  <span className="text-xs text-[#7A6F6F]">You can revisit any step and save new details.</span>
-                </div>
-              )}
-
-              {formError && (
-                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-inner">
-                  {formError}
-                </div>
-              )}
-
-              <div className="space-y-8">
-                {step === 0 && <Step0_SelectUserType value={userType} onSelect={setUserType} onNext={handleNext} />}
-                {step === 1 && <Step1_Welcome onNext={handleNext} onClose={() => router.push('/dashboard')} />}
-
-                {userType === 'influencer' && step === 2 && <Influencer_Step2_Profile />}
-                {userType === 'influencer' && step === 3 && <Influencer_Step3_AudienceAndPlatforms />}
-                {userType === 'influencer' && step === 4 && <Influencer_Step3_StyleAndGoals />}
-                {userType === 'influencer' && step === 5 && <Step3_SetGoals />}
-
-                {userType === 'business' && step === 2 && <Step2_BrandProfileForm />}
-                {userType === 'business' && step === 3 && <Business_Step3_TargetAudience />}
-                {userType === 'business' && step === 4 && <Step3_BrandVoiceRules />}
-                {userType === 'business' && step === 5 && <Step3_SetGoals />}
+          {/* Top row: Getting Started + Checklist */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Getting Started Card */}
+            <div className="rounded-3xl border border-white/70 bg-white/95 p-6 shadow-[0_16px_60px_rgba(58,47,47,0.12)] backdrop-blur-xl transition-all duration-500">
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-5 h-5 text-[#D2B193]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <p className="text-xs uppercase tracking-[0.4em] text-[#B89B7B] font-medium">Getting Started</p>
               </div>
+              <h2 className="text-2xl font-semibold text-[#2F2626] leading-tight">Choose your journey</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#5E5151]">
+                Pick the option that reflects how you plan to use Curative so we can tailor every step.
+              </p>
+            </div>
 
-              {step >= 2 && (
-                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setStep((prev) => Math.max(0, prev - 1))}
-                    disabled={isLoading}
-                    className="justify-center sm:justify-start"
-                  >
-                    Back
-                  </Button>
-                  <Button onClick={handleNext} disabled={isLoading} className="sm:min-w-[180px]">
-                    {isLoading ? 'Submitting...' : step === TOTAL_STEPS - 1 ? 'Complete Setup' : 'Continue'}
-                  </Button>
-                </div>
-              )}
-            </section>
-
-            <aside className="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-[0_14px_50px_rgba(58,47,47,0.10)] backdrop-blur-xl">
+            {/* Checklist Card */}
+            <div className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_60px_rgba(58,47,47,0.10)] backdrop-blur-xl transition-all duration-500">
               {stepGuidance ? (
                 <>
-                  <p className="text-xs uppercase tracking-[0.35em] text-[#B89B7B]">Checklist</p>
-                  <h3 className="mt-2 text-lg font-semibold text-[#2F2626]">{stepGuidance.title}</h3>
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-5 h-5 text-[#D2B193]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p className="text-xs uppercase tracking-[0.4em] text-[#B89B7B] font-medium">Checklist</p>
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2F2626] leading-tight">{stepGuidance.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
-                  <div className="mt-4 space-y-3">
-                    {stepGuidance.bullets.map((item) => (
-                      <div key={item} className="flex items-start gap-3 text-sm text-[#5E5151]">
-                        <span className="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#D2B193]" />
-                        <span>{item}</span>
+                  <div className="mt-4 space-y-2.5">
+                    {stepGuidance.bullets.map((item, index) => (
+                      <div key={item} className="flex items-start gap-2.5 text-xs text-[#5E5151] group">
+                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#D2B193] to-[#B89B7B] text-[10px] font-semibold text-white shadow-md transition-transform group-hover:scale-110">
+                          {index + 1}
+                        </div>
+                        <span className="leading-relaxed">{item}</span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-[#6B5E5E]">Choose a path to see guidance.</p>
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <svg className="w-10 h-10 text-[#D2B193] opacity-50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <p className="text-xs text-[#6B5E5E]">Choose a path to see guidance.</p>
+                </div>
               )}
-            </aside>
+            </div>
           </div>
+
+          {/* Main Options Card - Full Width */}
+          <section className="rounded-3xl border border-white/70 bg-white/95 p-8 shadow-[0_16px_60px_rgba(58,47,47,0.12)] backdrop-blur-xl transition-all duration-500">
+            {isReturningUser && (
+              <div className="mb-6 flex items-center justify-between rounded-xl bg-gradient-to-r from-[#F7EADB] to-[#F9EFE5] px-4 py-3.5 text-sm text-[#5E5151] shadow-md border border-[#E8D5C0]">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#D2B193]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-semibold text-[#3A2F2F]">Updating your profile</span>
+                </div>
+                <span className="text-xs text-[#7A6F6F]">You can revisit any step and save new details.</span>
+              </div>
+            )}
+
+            {formError && (
+              <div className="mb-6 rounded-xl border border-red-300 bg-gradient-to-r from-red-50 to-red-100 px-4 py-3.5 text-sm text-red-800 shadow-md flex items-center gap-2">
+                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>{formError}</span>
+              </div>
+            )}
+
+            <div className="space-y-8">
+              {step === 0 && <Step0_SelectUserType value={userType} onSelect={setUserType} onNext={handleNext} />}
+              {step === 1 && <Step1_Welcome onNext={handleNext} onClose={() => router.push('/dashboard')} />}
+
+              {userType === 'influencer' && step === 2 && <Influencer_Step2_Profile />}
+              {userType === 'influencer' && step === 3 && <Influencer_Step3_AudienceAndPlatforms />}
+              {userType === 'influencer' && step === 4 && <Influencer_Step3_StyleAndGoals />}
+              {userType === 'influencer' && step === 5 && <Step3_SetGoals />}
+
+              {userType === 'business' && step === 2 && <Step2_BrandProfileForm />}
+              {userType === 'business' && step === 3 && <Business_Step3_TargetAudience />}
+              {userType === 'business' && step === 4 && <Step3_BrandVoiceRules />}
+              {userType === 'business' && step === 5 && <Step3_SetGoals />}
+            </div>
+
+            {step >= 2 && (
+              <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  variant="secondary"
+                  onClick={() => setStep((prev) => Math.max(0, prev - 1))}
+                  disabled={isLoading}
+                  className="justify-center sm:justify-start group transition-all duration-300"
+                >
+                  <svg className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </Button>
+                <Button onClick={handleNext} disabled={isLoading} className="sm:min-w-[180px] group transition-all duration-300 hover:shadow-lg">
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Submitting...
+                    </>
+                  ) : step === TOTAL_STEPS - 1 ? (
+                    <>
+                      Complete Setup
+                      <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </FormProvider>
