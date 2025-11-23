@@ -9,7 +9,10 @@ const missingEnvError: StubError = {
 
 export function getSupabaseBrowser() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined
+  // Support both common env var names during migration
+  const anon =
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined) ||
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY as string | undefined)
 
   if (!url || !anon) {
     console.warn('[supabase-browser] falling back to stub client — env vars missing')

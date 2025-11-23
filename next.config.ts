@@ -23,64 +23,23 @@ const nextConfig: NextConfig = {
     scrollRestoration: true,
   },
 
-  // Turbopack configuration
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
+  // Turbopack configuration (inactive when using Webpack; keep minimal)
+  turbopack: {},
 
-  // Bundle analyzer (development only)
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Bundle analyzer
+  // Webpack: keep defaults; only enable analyzer when requested
+  webpack: (config, { isServer }) => {
     if (process.env.ANALYZE === 'true') {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
       config.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: 'static',
           openAnalyzer: false,
-          reportFilename: isServer
-            ? '../analyze/server.html'
-            : './analyze/client.html',
+          reportFilename: isServer ? '../analyze/server.html' : './analyze/client.html',
         })
-      );
+      )
     }
-
-    // Optimize bundle splitting
-    if (!isServer) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            priority: 10,
-            enforce: true,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            priority: 5,
-            reuseExistingChunk: true,
-          },
-        },
-      };
-    }
-
-    // Production optimizations
-    if (!dev && !isServer) {
-      // Tree shaking improvements
-      config.optimization.usedExports = true;
-      config.optimization.sideEffects = false;
-      
-      // Minification
-      config.optimization.minimize = true;
-    }
-
-    return config;
+    // Do not override Next's optimization defaults to avoid runtime chunk issues
+    return config
   },
 
   // Headers for security and performance

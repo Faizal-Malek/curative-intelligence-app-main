@@ -424,8 +424,15 @@ export const cacheUtils = {
 };
 
 // Pre-configured hooks for common endpoints
+type DashboardStatsResponse = {
+  scheduledPosts: number;
+  ideasInVault: number;
+  engagementDelta: number;
+  recentActivity?: number;
+};
+
 export function useDashboardStats() {
-  return useApi('/api/dashboard/stats', {
+  return useApi<DashboardStatsResponse>('/api/dashboard/stats', {
     cache: { ttl: 2 * 60 * 1000 }, // 2 minutes
     retry: { attempts: 2, delay: 1000 },
   });

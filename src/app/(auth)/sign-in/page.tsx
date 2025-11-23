@@ -30,6 +30,23 @@ export default function SignInPage() {
 
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
+
+      // Check if user exists in public database
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        try {
+          const res = await fetch('/api/user/status')
+          if (!res.ok) throw new Error('Service unavailable')
+          // If status returns default (onboardingComplete: false) but user exists in Auth,
+          // it means they are being created or already exist.
+          // If the API failed to connect to DB, it would have thrown 500, caught below.
+        } catch (e) {
+          // If we can't verify user status (e.g. DB down), sign them out
+          await supabase.auth.signOut()
+          throw new Error('Unable to verify account status. Please try again later.')
+        }
+      }
+
       window.location.href = '/dashboard'
     } catch (err: any) {
       const message =

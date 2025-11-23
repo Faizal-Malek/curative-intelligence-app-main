@@ -45,11 +45,25 @@ export default function AppLayout({
   const router = useRouter();
   const pathname = usePathname() || "/";
   const supabase = useMemo(() => getSupabaseBrowser(), []);
+  const isOnboardingRoute = pathname.startsWith("/onboarding");
 
-  const [authorized, setAuthorized] = useState(false);
-  const [status, setStatus] = useState<"checking" | "ready">("checking");
+  const [authorized, setAuthorized] = useState(
+    () => (isOnboardingRoute ? true : false)
+  );
+  const [status, setStatus] = useState<"checking" | "ready">(
+    () => (isOnboardingRoute ? "ready" : "checking")
+  );
+
+  const STATUS_CACHE_KEY = "user_status_cache_v1";
 
   useEffect(() => {
+    // Skip auth gate entirely on onboarding routes to avoid blocking when session cookies are in flux.
+    if (isOnboardingRoute) {
+      setAuthorized(true);
+      setStatus("ready");
+      return;
+    }
+
     const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
     if (isAuthRoute) {
       setStatus("ready");
@@ -104,18 +118,55 @@ export default function AppLayout({
       router.replace(destination);
     };
 
+    const readStatusCache = () => {
+      if (typeof window === "undefined") return null;
+      try {
+        const cached = sessionStorage.getItem(STATUS_CACHE_KEY);
+        if (!cached) return null;
+        return JSON.parse(cached) as { onboardingComplete?: boolean };
+      } catch {
+        sessionStorage.removeItem(STATUS_CACHE_KEY);
+        return null;
+      }
+    };
+
+    const writeStatusCache = (payload: { onboardingComplete: boolean; userType: string | null }) => {
+      if (typeof window === "undefined") return;
+      try {
+        sessionStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(payload));
+      } catch {
+        // ignore
+      }
+    };
+
     const ensureOnboardingComplete = async (): Promise<boolean> => {
+      // If cache already knows onboarding is done, return immediately and refresh in background.
+      const cached = readStatusCache();
+      if (cached?.onboardingComplete) {
+        // Background refresh
+        fetch("/api/user/status", { cache: "no-store" })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((json) => {
+            if (json?.onboardingComplete) {
+              writeStatusCache(json);
+            }
+          })
+          .catch(() => {});
+        return true;
+      }
+
       if (pathname.startsWith("/onboarding")) {
         return true;
       }
       try {
-        const response = await fetch("/api/user/status");
+        const response = await fetch("/api/user/status", { cache: "no-store" });
         if (cancelled) {
           return false;
         }
         if (response.ok) {
-          const { onboardingComplete } = await response.json();
-          if (onboardingComplete) {
+          const json = await response.json();
+          writeStatusCache(json);
+          if (json.onboardingComplete) {
             return true;
           }
         }

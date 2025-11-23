@@ -11,7 +11,7 @@ This error indicates that the Supabase database credentials in your environment 
 1. **Go to Supabase Dashboard**
    - Visit: https://supabase.com/dashboard
    - Log in with your account
-   - Check if your project `lmktoaqnaamphgokztua` is still active
+   - Check if your project `pdkzhofmczufbdvrezsp` (the one configured in `.env.local`) is still active
 
 2. **Check Project Status**
    - If project shows as "Paused" → Resume it

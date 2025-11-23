@@ -8,6 +8,7 @@ import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ActivityItem } from "@/components/dashboard/ActivityItem";
+import { useDashboardStats } from "@/lib/api-client";
 
 type DashboardStats = {
   scheduledPosts: number;
@@ -19,26 +20,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/dashboard/stats");
-        if (res.ok) {
-          const data = await res.json();
-          setStats({
-            scheduledPosts: data.scheduledPosts,
-            ideasInVault: data.ideasInVault,
-            engagementDelta: data.engagementDelta,
-          });
-        }
-      } catch (fetchError) {
-        console.error("Failed to fetch dashboard stats", fetchError);
-      }
-    };
-    fetchStats();
-  }, []);
+  const { data: statsData, loading: statsLoading, refetch: refetchStats } = useDashboardStats();
 
   const handleGenerateContent = async () => {
     setIsLoading(true);
@@ -69,6 +51,14 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   };
+
+  const stats: DashboardStats | null = statsData
+    ? {
+        scheduledPosts: statsData.scheduledPosts,
+        ideasInVault: statsData.ideasInVault,
+        engagementDelta: statsData.engagementDelta,
+      }
+    : null;
 
   const overviewCards = [
     {

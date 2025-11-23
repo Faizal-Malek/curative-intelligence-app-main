@@ -22,6 +22,24 @@ export async function ensureUserBySupabase(userId: string, email: string | null,
     return foundByEmail
   }
 
+  // Fallback: same Supabase uid already exists under a different email
+  const foundById = await prisma.user.findUnique({ where: { clerkId: userId } })
+  if (foundById) {
+    // Keep the record and optionally sync email if it changed
+    if (foundById.email !== email) {
+      try {
+        return await prisma.user.update({
+          where: { clerkId: userId },
+          data: { email },
+        })
+      } catch {
+        // If update fails, return existing to avoid blocking login
+        return foundById
+      }
+    }
+    return foundById
+  }
+
   // Create new user with standard Prisma approach
   try {
     const created = await prisma.user.create({
@@ -36,7 +54,13 @@ export async function ensureUserBySupabase(userId: string, email: string | null,
       },
     })
     return created
-  } catch (e) {
+  } catch (e: any) {
+    // Gracefully handle duplicate clerkId (P2002) by returning the existing record
+    const isUniqueClerkId = e?.code === 'P2002' && Array.isArray(e?.meta?.target) && e.meta.target.includes('clerkId')
+    if (isUniqueClerkId) {
+      const existing = await prisma.user.findUnique({ where: { clerkId: userId } })
+      if (existing) return existing
+    }
     // Surface meaningful error to caller; they log and return 500
     throw e
   }

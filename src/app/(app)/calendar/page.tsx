@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
   ChevronLeft,
@@ -50,6 +50,11 @@ type EventItem = {
   description?: string;
 };
 
+const sortEvents = (items: EventItem[]) =>
+  [...items].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+  );
+
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
@@ -78,9 +83,9 @@ export default function CalendarPage() {
     category: "reminder",
   });
   // Navigation state removed; AppShell provides the sidebar
-  const [selectedDay, setSelectedDay] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const toDateKey = (d: Date) => d.toLocaleDateString("en-CA");
+
+  const [selectedDay, setSelectedDay] = useState(() => toDateKey(new Date()));
   const [todaysEventsLoading, setTodaysEventsLoading] = useState(false);
   const [editingReminder, setEditingReminder] = useState<string | null>(null);
   const [reminderToDelete, setReminderToDelete] = useState<string | null>(null);
@@ -98,11 +103,37 @@ export default function CalendarPage() {
     [cursor]
   );
 
+  const rangeParams = useMemo(() => {
+    const params = new URLSearchParams({
+      start: range.start.toISOString(),
+      end: range.end.toISOString(),
+    });
+    return params;
+  }, [range.start, range.end]);
+
+  const refreshEvents = useCallback(
+    async (withLoading = true) => {
+      if (withLoading) setEventsLoading(true);
+      try {
+        const res = await fetch(`/api/calendar/events?${rangeParams.toString()}`);
+        if (!res.ok) throw new Error("Failed to load events");
+        const json = await res.json();
+        setEvents(json.events ?? []);
+      } catch (e) {
+        console.error(e);
+        if (withLoading) setEvents([]);
+      } finally {
+        if (withLoading) setEventsLoading(false);
+      }
+    },
+    [rangeParams]
+  );
+
   // Get today's events with loading state
   const todaysEvents = useMemo(() => {
     const todayKey = selectedDay;
     return events.filter((ev) => {
-      const evDate = new Date(ev.start).toISOString().slice(0, 10);
+      const evDate = toDateKey(new Date(ev.start));
       return evDate === todayKey;
     });
   }, [events, selectedDay]);
@@ -111,14 +142,14 @@ export default function CalendarPage() {
   const goToToday = () => {
     const today = new Date();
     setCursor(startOfMonth(today));
-    setSelectedDay(today.toISOString().slice(0, 10));
+    setSelectedDay(toDateKey(today));
   };
 
   // Navigate to previous day
   const prevDay = () => {
     const current = new Date(selectedDay);
     current.setDate(current.getDate() - 1);
-    const newDay = current.toISOString().slice(0, 10);
+    const newDay = toDateKey(current);
     setSelectedDay(newDay);
     setCursor(startOfMonth(current));
   };
@@ -127,33 +158,28 @@ export default function CalendarPage() {
   const nextDay = () => {
     const current = new Date(selectedDay);
     current.setDate(current.getDate() + 1);
-    const newDay = current.toISOString().slice(0, 10);
+    const newDay = toDateKey(current);
     setSelectedDay(newDay);
     setCursor(startOfMonth(current));
   };
 
   // Delete reminder function
   const deleteReminder = async (reminderId: string) => {
+    const previous = events;
+    setEvents((prev) => prev.filter((ev) => ev.id !== reminderId));
+
     try {
       const res = await fetch(`/api/calendar/reminders/${reminderId}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        // Reload events
-        const params = new URLSearchParams({
-          start: range.start.toISOString(),
-          end: range.end.toISOString(),
-        });
-        const eventsRes = await fetch(
-          `/api/calendar/events?${params.toString()}`
-        );
-        if (eventsRes.ok) {
-          const json = await eventsRes.json();
-          setEvents(json.events ?? []);
-        }
+      if (!res.ok) {
+        throw new Error("Delete failed");
       }
+      // Background refresh without blocking UI
+      refreshEvents(false);
     } catch (error) {
       console.error("Failed to delete reminder:", error);
+      setEvents(previous);
     }
     setReminderToDelete(null);
   };
@@ -197,20 +223,28 @@ export default function CalendarPage() {
         }),
       });
 
-      if (res.ok) {
-        // Reload events
-        const params = new URLSearchParams({
-          start: range.start.toISOString(),
-          end: range.end.toISOString(),
-        });
-        const eventsRes = await fetch(
-          `/api/calendar/events?${params.toString()}`
-        );
-        if (eventsRes.ok) {
-          const json = await eventsRes.json();
-          setEvents(json.events ?? []);
-        }
-      }
+      if (!res.ok) throw new Error("Update failed");
+
+      setEvents((prev) =>
+        sortEvents(
+          prev.map((ev) =>
+            ev.id === editingReminder
+              ? {
+                  ...ev,
+                  title: editForm.title,
+                  description: editForm.description,
+                  start: startDate.toISOString(),
+                  end: startDate.toISOString(),
+                  allDay: editForm.allDay,
+                  type: "reminder",
+                }
+              : ev
+          )
+        )
+      );
+
+      // Background refresh without blocking UI
+      refreshEvents(false);
     } catch (error) {
       console.error("Failed to update reminder:", error);
     }
@@ -220,26 +254,8 @@ export default function CalendarPage() {
 
   // Load events for calendar view
   useEffect(() => {
-    const loadEvents = async () => {
-      setEventsLoading(true);
-      try {
-        const params = new URLSearchParams({
-          start: range.start.toISOString(),
-          end: range.end.toISOString(),
-        });
-        const res = await fetch(`/api/calendar/events?${params.toString()}`);
-        if (!res.ok) throw new Error("Failed to load events");
-        const json = await res.json();
-        setEvents(json.events ?? []);
-      } catch (e) {
-        console.error(e);
-        setEvents([]);
-      } finally {
-        setEventsLoading(false);
-      }
-    };
-    loadEvents();
-  }, [range.start, range.end]);
+    refreshEvents(true);
+  }, [refreshEvents]);
 
   // Load today's events separately when selected day changes
   useEffect(() => {
@@ -283,7 +299,7 @@ export default function CalendarPage() {
     const map = new Map<string, EventItem[]>();
     for (const ev of events) {
       const d = new Date(ev.start);
-      const key = d.toISOString().slice(0, 10);
+      const key = toDateKey(d);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(ev);
     }
@@ -533,7 +549,7 @@ export default function CalendarPage() {
                   ))
                 : weeks.flat().map((day) => {
                     const inMonth = day.getMonth() === cursor.getMonth();
-                    const key = day.toISOString().slice(0, 10);
+                    const key = toDateKey(day);
                     const dayEvents = eventsByDay.get(key) ?? [];
                     const isToday =
                       key === new Date().toISOString().slice(0, 10);
@@ -927,14 +943,14 @@ export default function CalendarPage() {
                   variant="secondary"
                   onClick={() => {
                     setShowAddModal(false);
-                    setAddForm({
-                      title: "",
-                      description: "",
-                      date: new Date().toISOString().slice(0, 10),
-                      time: "09:00",
-                      allDay: false,
-                      category: "reminder",
-                    });
+                      setAddForm({
+                        title: "",
+                        description: "",
+                        date: toDateKey(new Date()),
+                        time: "09:00",
+                        allDay: false,
+                        category: "reminder",
+                      });
                   }}
                 >
                   Cancel
@@ -942,10 +958,35 @@ export default function CalendarPage() {
                 <Button
                   variant="primary"
                   onClick={async () => {
+                    const previousEvents = events;
+                    const resetForm = {
+                      title: "",
+                      description: "",
+                      date: toDateKey(new Date()),
+                      time: "09:00",
+                      allDay: false,
+                      category: "reminder",
+                    };
+
                     try {
                       const startsAt = addForm.allDay
                         ? new Date(`${addForm.date}T00:00:00`)
                         : new Date(`${addForm.date}T${addForm.time}:00`);
+
+                      // Optimistic UI update
+                      const tempId = `temp-${Date.now()}`;
+                      const optimisticEvent: EventItem = {
+                        id: tempId,
+                        title: addForm.title,
+                        description: addForm.description || "",
+                        start: startsAt.toISOString(),
+                        end: startsAt.toISOString(),
+                        allDay: addForm.allDay,
+                        type: "reminder",
+                      };
+                      setEvents((prev) => sortEvents([...prev, optimisticEvent]));
+                      setShowAddModal(false);
+                      setAddForm(resetForm);
 
                       const res = await fetch("/api/calendar/reminders", {
                         method: "POST",
@@ -955,36 +996,35 @@ export default function CalendarPage() {
                           description: addForm.description || undefined,
                           category: addForm.category,
                           startsAt,
+                          allDay: addForm.allDay,
                         }),
                       });
 
                       if (!res.ok) throw new Error("Create failed");
+                      const json = await res.json();
+                      const created = json.reminder;
 
-                      // Reset form and close modal
-                      setAddForm({
-                        title: "",
-                        description: "",
-                        date: new Date().toISOString().slice(0, 10),
-                        time: "09:00",
-                        allDay: false,
-                        category: "reminder",
-                      });
-                      setShowAddModal(false);
-
-                      // Reload events
-                      const params = new URLSearchParams({
-                        start: range.start.toISOString(),
-                        end: range.end.toISOString(),
-                      });
-                      const eventsRes = await fetch(
-                        `/api/calendar/events?${params.toString()}`
+                      setEvents((prev) =>
+                        sortEvents(
+                          prev.map((ev) =>
+                            ev.id === tempId
+                              ? {
+                                  ...ev,
+                                  id: created.id,
+                                  start: created.startsAt,
+                                  end: created.endsAt ?? created.startsAt,
+                                  allDay: created.allDay ?? false,
+                                }
+                              : ev
+                          )
+                        )
                       );
-                      if (eventsRes.ok) {
-                        const json = await eventsRes.json();
-                        setEvents(json.events ?? []);
-                      }
+
+                      // Background refresh to ensure consistency
+                      refreshEvents(false);
                     } catch (err) {
                       console.error(err);
+                      setEvents(previousEvents);
                       alert("Failed to create reminder");
                     }
                   }}

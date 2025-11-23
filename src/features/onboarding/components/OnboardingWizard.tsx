@@ -9,7 +9,6 @@ import {
   type InfluencerFormData,
 } from '@/lib/validations/onboarding';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { ProgressBar } from './ProgressBar';
 import { Step1_Welcome } from './Step1_Welcome';
 import { Step2_BrandProfileForm } from './Step2_BrandProfileForm';
@@ -24,10 +23,16 @@ import { useRouter } from 'next/navigation';
 
 type WizardFormValues = Partial<BusinessOwnerFormData> & Partial<InfluencerFormData>;
 
+type StepGuidance = {
+  title: string;
+  description: string;
+  bullets: string[];
+};
+
 export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [userType, setUserType] = useState<'business' | 'influencer' | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(true); // render immediately; fetch runs in background
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -35,15 +40,13 @@ export default function OnboardingWizard() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const TOTAL_STEPS = 6; // Select Type, Welcome, Profile, Target Audience/Platform, Voice/Style & Rules, Goals
-
-  // Check if user already has a type, but don't auto-advance past selection
+  const TOTAL_STEPS = 6; // Select Type, Welcome, Profile, Audience, Voice & Rules, Goals
   const hasFetchedStatus = useRef(false);
 
+  // Background initialization
   useEffect(() => {
     if (hasFetchedStatus.current) return;
     hasFetchedStatus.current = true;
-
     let cancelled = false;
 
     (async () => {
@@ -56,14 +59,9 @@ export default function OnboardingWizard() {
           }
           return;
         }
-
         const payload = await res.json();
         const hasCompleted = payload?.hasCompletedOnboarding ?? payload?.onboardingComplete ?? false;
-
-        if (hasCompleted) {
-          setIsReturningUser(true);
-        }
-
+        if (hasCompleted) setIsReturningUser(true);
         const incomingType = payload?.userType;
         if (incomingType === 'business' || incomingType === 'influencer') {
           setUserType(incomingType);
@@ -71,9 +69,7 @@ export default function OnboardingWizard() {
       } catch (error) {
         console.error('User status API call failed:', error);
       } finally {
-        if (!cancelled) {
-          setIsInitialized(true);
-        }
+        if (!cancelled) setIsInitialized(true);
       }
     })();
 
@@ -82,23 +78,18 @@ export default function OnboardingWizard() {
     };
   }, []);
 
-  // We initialize RHF without a resolver since we handle manual step-by-step validation
+  // React Hook Form setup
   const methods = useForm<WizardFormValues>({
-    // No resolver - we do manual validation per step
-    mode: 'onChange', // Show validation errors as user types
+    mode: 'onChange',
     shouldUnregister: false,
   });
-
   const { handleSubmit, getValues, setError: setFieldError, clearErrors, watch } = methods;
 
   useEffect(() => {
     const subscription = watch((_value, info) => {
-      if (info?.name) {
-        clearErrors(info.name as Path<WizardFormValues>);
-      }
+      if (info?.name) clearErrors(info.name as Path<WizardFormValues>);
       setFormError(null);
     });
-
     return () => subscription.unsubscribe();
   }, [watch, clearErrors]);
 
@@ -109,7 +100,6 @@ export default function OnboardingWizard() {
 
   const handleNext = async () => {
     if (step === 0) {
-      // User type selection - validate type is selected
       if (!userType) {
         setFormError('Please select how you plan to use Curative.');
         return;
@@ -120,19 +110,15 @@ export default function OnboardingWizard() {
     }
 
     if (step === 1) {
-      // Welcome step - just move to profile step
       setFormError(null);
       setStep(2);
       return;
     }
 
-    // Step-by-step validation for remaining steps
     const values = getValues();
 
     const focusField = (fieldName: Path<WizardFormValues> | null, message: string) => {
-      if (fieldName) {
-        setFieldError(fieldName, { type: 'manual', message });
-      }
+      if (fieldName) setFieldError(fieldName, { type: 'manual', message });
       setFormError(message);
       requestAnimationFrame(() => {
         if (!fieldName) return;
@@ -144,7 +130,6 @@ export default function OnboardingWizard() {
 
     if (userType === 'influencer') {
       if (step === 2) {
-        // Profile step validation
         if (!values.displayName || values.displayName.length < 2) {
           focusField('displayName', 'Please enter a display name (at least 2 characters).');
           return;
@@ -158,7 +143,6 @@ export default function OnboardingWizard() {
           return;
         }
       } else if (step === 3) {
-        // Audience and platforms step
         if (!values.targetAudience || values.targetAudience.length < 10) {
           focusField('targetAudience', 'Please describe your target audience (at least 10 characters).');
           return;
@@ -172,7 +156,6 @@ export default function OnboardingWizard() {
           return;
         }
       } else if (step === 4) {
-        // Style and guidelines step
         if (!values.contentStyle) {
           focusField('contentStyle', 'Please specify your content style.');
           return;
@@ -182,7 +165,6 @@ export default function OnboardingWizard() {
           return;
         }
       } else if (step === 5) {
-        // Goals step
         if (!values.primaryGoal) {
           focusField('primaryGoal', 'Please select your primary goal.');
           return;
@@ -190,7 +172,6 @@ export default function OnboardingWizard() {
       }
     } else if (userType === 'business') {
       if (step === 2) {
-        // Brand profile step
         if (!values.brandName || values.brandName.length < 2) {
           focusField('brandName', 'Please enter a brand name (at least 2 characters).');
           return;
@@ -204,7 +185,6 @@ export default function OnboardingWizard() {
           return;
         }
       } else if (step === 3) {
-        // Target audience step
         if (!values.targetDemographics || values.targetDemographics.length < 5) {
           focusField('targetDemographics', 'Please describe your target demographics (at least 5 characters).');
           return;
@@ -218,13 +198,11 @@ export default function OnboardingWizard() {
           return;
         }
       } else if (step === 4) {
-        // Brand voice step
         if (!values.brandVoiceDescription || values.brandVoiceDescription.trim().length === 0) {
           focusField('brandVoiceDescription', 'Please select or describe your brand voice.');
           return;
         }
       } else if (step === 5) {
-        // Goals step
         if (!values.primaryGoal) {
           focusField('primaryGoal', 'Please select your primary goal.');
           return;
@@ -238,7 +216,6 @@ export default function OnboardingWizard() {
     if (step < TOTAL_STEPS - 1) {
       setStep((prev) => prev + 1);
     } else {
-      // Final step - submit the form
       await handleSubmit(onSubmit)();
     }
   };
@@ -248,9 +225,7 @@ export default function OnboardingWizard() {
     setFormError(null);
 
     try {
-      if (!userType) {
-        throw new Error('Please choose how you plan to use Curative before submitting.');
-      }
+      if (!userType) throw new Error('Please choose how you plan to use Curative before submitting.');
 
       let payload: Partial<BusinessOwnerFormData> | Partial<InfluencerFormData>;
       if (userType === 'influencer') {
@@ -320,17 +295,12 @@ export default function OnboardingWizard() {
         throw new Error(errorData.message || 'Failed to complete onboarding');
       }
 
-      // Success - redirect to dashboard
       router.push('/dashboard');
     } catch (error: unknown) {
       console.error('Onboarding submission error:', error);
       const message = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       setFormError(message);
-      toast({
-        variant: 'error',
-        title: 'Unable to complete onboarding',
-        description: message,
-      });
+      toast({ variant: 'error', title: 'Unable to complete onboarding', description: message });
     } finally {
       setIsLoading(false);
     }
@@ -338,276 +308,213 @@ export default function OnboardingWizard() {
 
   const stepLabels = useMemo(() => {
     const base = ['Select Path', 'Welcome', 'Profile', 'Audience', 'Voice & Rules', 'Goals'];
-    if (!userType) {
-      return base;
-    }
-
-    if (userType === 'business') {
-      return ['Select Path', 'Welcome', 'Brand Profile', 'Audience & Channels', 'Voice & Guidelines', 'Goals'];
-    }
-
+    if (!userType) return base;
+    if (userType === 'business') return ['Select Path', 'Welcome', 'Brand Profile', 'Audience & Channels', 'Voice & Guidelines', 'Goals'];
     return ['Select Path', 'Welcome', 'Creator Profile', 'Audience & Platforms', 'Style & Guidelines', 'Goals'];
   }, [userType]);
 
-  const stepGuidance = useMemo(() => {
+  const stepGuidance: StepGuidance | null = useMemo(() => {
     if (step === 0) {
       return {
         title: 'Choose the journey that fits you best',
-        description:
-          'Pick the option that reflects how you plan to use Curative. We use this to tailor every step that follows.',
+        description: 'Pick the option that reflects how you plan to use Curative so we can tailor every step.',
         bullets: [
           'Business Owners: focus on brand foundations, voice, and campaign goals.',
           'Content Creators: highlight your personal brand, audience, and style.',
-          'You can always update this later from your settings page.',
+          'You can always update this later from settings.',
         ],
       };
     }
-
     if (step === 1) {
       return {
         title: 'A guided setup in minutes',
-        description:
-          'Each step builds on the last so you can launch with clarity. You can save and return at any time.',
+        description: 'Each step builds on the last. You can save and return anytime.',
         bullets: [
-          'Review the checklist before you continue to stay organised.',
-          'We only ask for the essentials—no complex jargon.',
-          'Need to exit? You can resume later right where you left off.',
+          'Skim the checklist before continuing.',
+          'We ask only for essentials—no jargon.',
+          'You can resume later right where you left off.',
         ],
       };
     }
-
     if (userType === 'business') {
       switch (step) {
         case 2:
           return {
             title: 'Capture the heart of your brand',
-            description:
-              'Share your brand basics so we can tailor strategy, tone, and campaign templates to what makes you unique.',
+            description: 'Share the basics so we can tailor tone, strategy, and templates.',
             bullets: [
               'Keep descriptions clear and audience focused.',
               'Mention what differentiates you from competitors.',
-              'Short, confident sentences work better than jargon.',
+              'Short, confident sentences beat jargon.',
             ],
           };
         case 3:
           return {
             title: 'Define who you are talking to',
-            description:
-              'Understanding your target audience helps Curative craft messaging that resonates and converts.',
+            description: 'Clarify demographics and motivations to shape messaging.',
             bullets: [
-              'Highlight demographic details and motivations.',
-              'Share pain points in their own words if you can.',
-              'List the channels that produce your best conversations.',
+              'Highlight motivations and pain points.',
+              'List best-performing channels.',
+              'Use customer language when possible.',
             ],
           };
         case 4:
           return {
             title: 'Set the tone and guardrails',
-            description:
-              'Describe the voice and rules that keep your content recognisable across every platform.',
+            description: 'Describe the voice and rules that keep your content recognisable.',
             bullets: [
-              'Use adjectives for tone (e.g. warm, authoritative, witty).',
-              'Add quick “do” and “don’t” guardrails to align the AI.',
-              'Reference examples your team loves to mimic style.',
+              'Use adjectives for tone (warm, authoritative, witty).',
+              'Add quick “do” and “don’t” guardrails.',
+              'Reference examples your team loves.',
             ],
           };
         default:
           return {
             title: 'Choose the outcome that matters most',
-            description:
-              'Prioritise the goal you want Curative to focus on so recommendations stay aligned with your strategy.',
+            description: 'Prioritise the goal to keep recommendations aligned.',
             bullets: [
               'Think about the next 90 days of growth.',
-              'You can refine or change this goal anytime.',
-              'We’ll surface insights and tasks tied to this choice.',
+              'You can refine this anytime.',
+              'We’ll surface insights tied to this choice.',
             ],
           };
       }
     }
-
     if (userType === 'influencer') {
       switch (step) {
         case 2:
           return {
             title: 'Spotlight your creator brand',
-            description:
-              'Introduce yourself so we can match collaborations, prompts, and scripts to your unique presence.',
+            description: 'Introduce yourself so we can match prompts and scripts to you.',
             bullets: [
-              'Share what followers love most about you.',
-              'Mention the niche or topics you show up for consistently.',
-              'Keep your bio conversational and authentic.',
+              'Share what followers love most.',
+              'Mention the niche you show up for consistently.',
+              'Keep it conversational and authentic.',
             ],
           };
         case 3:
           return {
             title: 'Know your community',
-            description:
-              'Clarify who you reach today and where they engage with you so content planning stays laser-focused.',
+            description: 'Clarify who you reach and where they engage.',
             bullets: [
               'Include audience interests and behaviours.',
-              'List the platforms you’re investing in this season.',
-              'Estimate your follower range to size opportunities.',
+              'List the platforms you’re investing in.',
+              'Estimate follower range to size opportunities.',
             ],
           };
         case 4:
           return {
             title: 'Clarify your creative vibe',
-            description:
-              'Tell us how you show up and how often so we can generate scripts and ideas that feel natural.',
+            description: 'Tell us how you show up and how often.',
             bullets: [
-              'Describe your tone or signature storytelling style.',
-              'Add posting cadence so scheduling suggestions fit.',
-              'Include any brand partnerships we should respect.',
+              'Describe tone or signature style.',
+              'Add posting cadence for scheduling.',
+              'Include partnerships to respect.',
             ],
           };
         default:
           return {
             title: 'Align on your growth target',
-            description:
-              'Select the goal that best reflects what success looks like right now so your plan stays motivating.',
+            description: 'Pick the goal that defines success right now.',
             bullets: [
-              'Growing faster? Choose awareness or community.',
-              'Launching something? Focus on conversions.',
-              'We’ll adapt your roadmap as your priorities evolve.',
+              'Awareness/community for growth.',
+              'Conversions for launches.',
+              'We adapt as your priorities evolve.',
             ],
           };
       }
     }
-
     return null;
   }, [step, userType]);
 
-  // Don't render until we've checked the user type
-  if (!isInitialized) {
-    return (
-      <div className="relative min-h-screen w-full overflow-hidden bg-brand-alabaster">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-48 -left-48 h-[40rem] w-[40rem] rounded-full bg-[#D2B193]/[var(--glow-opacity-1)] blur-3xl"></div>
-          <div className="absolute -bottom-56 -right-40 h-[32rem] w-[32rem] rounded-full bg-[#EFE8D8]/[var(--glow-opacity-2)] blur-3xl"></div>
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_500px_at_0%_0%,rgba(210,177,147,var(--radial-opacity)),transparent_60%)]"></div>
-        <div className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(58,47,47,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(58,47,47,0.04)_1px,transparent_1px)] [background-size:28px_28px]"></div>
-
-        <div className="relative flex min-h-screen items-center justify-center p-6">
-          <div className="group relative mx-auto w-full max-w-md">
-            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#D2B193]/40 to-[#EFE8D8]/40 opacity-60 blur-2xl transition duration-500 group-hover:opacity-80"></div>
-            <div className="relative rounded-2xl border border-white/20 bg-white/10 p-8 text-center text-[#3A2F2F] shadow-[0_6px_30px_rgba(58,47,47,0.10)] backdrop-blur-xl">
-              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-xl border border-white/30 bg-white/20 shadow-inner backdrop-blur">
-                <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#D2B193]/60 border-t-transparent"></div>
-              </div>
-              <h2 className="font-display text-2xl tracking-wide">Preparing your workspace</h2>
-              <p className="mt-2 text-sm text-[#7A6F6F]">Checking your session and settings…</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <FormProvider {...methods}>
-      <div className="relative min-h-screen w-full overflow-hidden bg-brand-alabaster">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-48 -left-48 h-[40rem] w-[40rem] rounded-full bg-[#D2B193]/[var(--glow-opacity-1)] blur-3xl"></div>
-          <div className="absolute -bottom-56 -right-40 h-[32rem] w-[32rem] rounded-full bg-[#EFE8D8]/[var(--glow-opacity-2)] blur-3xl"></div>
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_500px_at_0%_0%,rgba(210,177,147,var(--radial-opacity)),transparent_60%)]"></div>
-        <div className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(58,47,47,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(58,47,47,0.04)_1px,transparent_1px)] [background-size:28px_28px]"></div>
-
-          <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-8">
-            <div className="group relative mx-auto w-full max-w-6xl">
-              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#D2B193]/40 to-[#EFE8D8]/40 opacity-60 blur-3xl transition duration-500 group-hover:opacity-80"></div>
-              <div className="relative overflow-hidden rounded-3xl border border-white/25 bg-white/70 shadow-[0_24px_80px_rgba(58,47,47,0.18)] backdrop-blur-2xl">
-                <div
-                  className={cn(
-                    "grid gap-0",
-                    step === 0 ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.9fr)]"
-                  )}
-                >
-                  <div className="p-6 sm:p-10">
-                {/* Progress Bar */}
-                <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
-
-                {isReturningUser && (
-                  <div className="mt-6 rounded-xl border border-[#D2B193]/40 bg-[#F4E9DA]/70 p-4 text-sm text-[#5E5151] shadow-inner">
-                    <p className="font-semibold text-[#3A2F2F]">You're updating your brand profile</p>
-                    <p className="mt-1 text-sm text-[#6B5E5E]">
-                      Feel free to revisit any step to refresh your details. We'll save your changes once you complete the flow.
-                    </p>
-                  </div>
-                )}
-
-                {/* Error Display */}
-                {formError && (
-                    <div className="mb-6 rounded-xl border border-red-200/80 bg-red-50/80 p-4 text-sm text-red-700 shadow-inner">
-                      {formError}
-                    </div>
-                  )}
-
-                  {/* Step Content */}
-                  <div className="mt-6 space-y-8">
-                    {step === 0 && <Step0_SelectUserType value={userType} onSelect={setUserType} onNext={handleNext} />}
-                    {step === 1 && <Step1_Welcome onNext={handleNext} onClose={() => router.push('/dashboard')} />}
-
-                    {/* Influencer Flow */}
-                    {userType === 'influencer' && step === 2 && <Influencer_Step2_Profile />}
-                    {userType === 'influencer' && step === 3 && <Influencer_Step3_AudienceAndPlatforms />}
-                    {userType === 'influencer' && step === 4 && <Influencer_Step3_StyleAndGoals />}
-                    {userType === 'influencer' && step === 5 && <Step3_SetGoals />}
-
-                    {/* Business Flow */}
-                    {userType === 'business' && step === 2 && <Step2_BrandProfileForm />}
-                    {userType === 'business' && step === 3 && <Business_Step3_TargetAudience />}
-                    {userType === 'business' && step === 4 && <Step3_BrandVoiceRules />}
-                    {userType === 'business' && step === 5 && <Step3_SetGoals />}
-                  </div>
-
-                  {/* Navigation Buttons for steps 2-5 */}
-                  {step >= 2 && (
-                    <div className="mt-10 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <Button
-                        variant="text"
-                        onClick={() => setStep((prev) => Math.max(0, prev - 1))}
-                        disabled={isLoading}
-                        className="justify-center sm:justify-start"
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        onClick={handleNext}
-                        disabled={isLoading}
-                        className="sm:min-w-[180px]"
-                      >
-                        {isLoading ? 'Submitting…' : step === TOTAL_STEPS - 1 ? 'Complete Setup' : 'Continue'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {stepGuidance && step > 0 && (
-                  <aside className="hidden h-full flex-col gap-8 border-t border-white/40 bg-gradient-to-b from-white/85 via-white/70 to-white/40 p-8 text-[#3A2F2F] lg:sticky lg:top-8 lg:flex lg:max-w-sm lg:self-start lg:border-l lg:border-t-0 xl:max-w-md">
-                    <div className="space-y-3">
-                      <p className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-1.5 text-xs uppercase tracking-[0.35em] text-[#B89B7B]">
-                        Pro Tip
-                      </p>
-                      <h3 className="text-2xl font-semibold text-[#3A2F2F]">{stepGuidance.title}</h3>
-                      <p className="text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
-                    </div>
-                    <div className="space-y-4 rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_14px_36px_rgba(58,47,47,0.12)]">
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#B89B7B]">Checklist</p>
-                      <ul className="space-y-3 text-sm leading-relaxed text-[#5E5151]">
-                        {stepGuidance.bullets.map((item) => (
-                          <li key={item} className="flex items-start gap-3">
-                            <span className="mt-[6px] inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#D2B193]" aria-hidden="true"></span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </aside>
-                )}
+      <div className="min-h-screen w-full bg-[#f7f3ed]">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-[0_16px_60px_rgba(58,47,47,0.16)] backdrop-blur-xl">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.35em] text-[#B89B7B]">Onboarding</p>
+                <h1 className="text-2xl font-floreal text-[#2F2626] sm:text-3xl">Set up your workspace</h1>
+                <p className="max-w-2xl text-sm text-[#6B5E5E]">
+                  Choose your path and share a few details. We’ll tailor brand voice, goals, and content to you.
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#2F2626] px-3 py-2 text-xs font-medium text-white shadow-md">
+                {userType ? `Path: ${userType === 'business' ? 'Business Owner' : 'Content Creator'}` : 'No path selected'}
               </div>
             </div>
+            <div className="mt-4">
+              <ProgressBar currentStep={Math.max(1, step + 1)} totalSteps={TOTAL_STEPS} stepLabels={stepLabels} />
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.9fr)]">
+            <section className="rounded-2xl border border-white/70 bg-white/90 p-5 shadow-[0_14px_50px_rgba(58,47,47,0.12)] backdrop-blur-xl">
+              {isReturningUser && (
+                <div className="mb-4 flex items-center justify-between rounded-xl bg-[#F7EADB] px-4 py-3 text-sm text-[#5E5151] shadow-inner">
+                  <span className="font-semibold text-[#3A2F2F]">Updating your profile</span>
+                  <span className="text-xs text-[#7A6F6F]">You can revisit any step and save new details.</span>
+                </div>
+              )}
+
+              {formError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-inner">
+                  {formError}
+                </div>
+              )}
+
+              <div className="space-y-8">
+                {step === 0 && <Step0_SelectUserType value={userType} onSelect={setUserType} onNext={handleNext} />}
+                {step === 1 && <Step1_Welcome onNext={handleNext} onClose={() => router.push('/dashboard')} />}
+
+                {userType === 'influencer' && step === 2 && <Influencer_Step2_Profile />}
+                {userType === 'influencer' && step === 3 && <Influencer_Step3_AudienceAndPlatforms />}
+                {userType === 'influencer' && step === 4 && <Influencer_Step3_StyleAndGoals />}
+                {userType === 'influencer' && step === 5 && <Step3_SetGoals />}
+
+                {userType === 'business' && step === 2 && <Step2_BrandProfileForm />}
+                {userType === 'business' && step === 3 && <Business_Step3_TargetAudience />}
+                {userType === 'business' && step === 4 && <Step3_BrandVoiceRules />}
+                {userType === 'business' && step === 5 && <Step3_SetGoals />}
+              </div>
+
+              {step >= 2 && (
+                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setStep((prev) => Math.max(0, prev - 1))}
+                    disabled={isLoading}
+                    className="justify-center sm:justify-start"
+                  >
+                    Back
+                  </Button>
+                  <Button onClick={handleNext} disabled={isLoading} className="sm:min-w-[180px]">
+                    {isLoading ? 'Submitting...' : step === TOTAL_STEPS - 1 ? 'Complete Setup' : 'Continue'}
+                  </Button>
+                </div>
+              )}
+            </section>
+
+            <aside className="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-[0_14px_50px_rgba(58,47,47,0.10)] backdrop-blur-xl">
+              {stepGuidance ? (
+                <>
+                  <p className="text-xs uppercase tracking-[0.35em] text-[#B89B7B]">Checklist</p>
+                  <h3 className="mt-2 text-lg font-semibold text-[#2F2626]">{stepGuidance.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[#5E5151]">{stepGuidance.description}</p>
+                  <div className="mt-4 space-y-3">
+                    {stepGuidance.bullets.map((item) => (
+                      <div key={item} className="flex items-start gap-3 text-sm text-[#5E5151]">
+                        <span className="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#D2B193]" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-[#6B5E5E]">Choose a path to see guidance.</p>
+              )}
+            </aside>
           </div>
         </div>
       </div>

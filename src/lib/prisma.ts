@@ -19,7 +19,11 @@ const overriddenUrl = withPgBouncerParam(process.env.DATABASE_URL);
 export const prisma =
   global.prisma ||
   new PrismaClient({
-    log: ['query'],
+    // Keep query logs opt-in to avoid noisy console output. Enable by setting PRISMA_LOG_QUERIES=1.
+    log:
+      process.env.PRISMA_LOG_QUERIES === '1'
+        ? ['query', 'warn', 'error']
+        : ['warn', 'error'],
     datasources: overriddenUrl
       ? { db: { url: overriddenUrl } }
       : undefined,
