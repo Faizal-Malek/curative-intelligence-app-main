@@ -10,6 +10,8 @@ import {
 } from '@/lib/validations/onboarding';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from './ProgressBar';
+import { WorkspaceGenerationModal } from '@/components/onboarding/WorkspaceGenerationModal';
+import { generatePersonalizedWorkspace, saveWorkspaceConfig } from '@/services/workspace-personalization';
 import { Step1_Welcome } from './Step1_Welcome';
 import { Step2_BrandProfileForm } from './Step2_BrandProfileForm';
 import { Step3_BrandVoiceRules } from './Step3_BrandVoiceRules';
@@ -36,6 +38,9 @@ export default function OnboardingWizard() {
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showGenerationModal, setShowGenerationModal] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [currentGenerationStep, setCurrentGenerationStep] = useState('');
 
   const router = useRouter();
   const { toast } = useToast();
@@ -284,6 +289,10 @@ export default function OnboardingWizard() {
         } satisfies Partial<BusinessOwnerFormData>;
       }
 
+      // Show generation modal
+      setShowGenerationModal(true);
+
+      // Submit onboarding data
       const response = await fetch('/api/onboarding/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -295,6 +304,33 @@ export default function OnboardingWizard() {
         throw new Error(errorData.message || 'Failed to complete onboarding');
       }
 
+      // Simulate progress steps
+      const steps = userType === 'business' 
+        ? ['Analyzing brand profile', 'Setting up brand voice', 'Configuring content templates', 'Personalizing dashboard', 'Generating initial recommendations']
+        : ['Analyzing creator profile', 'Understanding your audience', 'Configuring content style', 'Personalizing dashboard', 'Generating content ideas'];
+
+      for (let i = 0; i < steps.length; i++) {
+        setCurrentGenerationStep(steps[i]);
+        setGenerationProgress(((i + 1) / steps.length) * 100);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      // Generate personalized workspace configuration
+      const workspaceConfig = await generatePersonalizedWorkspace(userType, payload);
+      
+      // Save workspace config to database
+      const userRes = await fetch('/api/user/status');
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (userData.id) {
+          await saveWorkspaceConfig(userData.id, workspaceConfig);
+        }
+      }
+
+      // Complete and redirect
+      setGenerationProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       router.push('/dashboard');
     } catch (error: unknown) {
       console.error('Onboarding submission error:', error);
@@ -583,6 +619,17 @@ export default function OnboardingWizard() {
           </section>
         </div>
       </div>
+
+      {/* Workspace Generation Modal */}
+      <WorkspaceGenerationModal
+        isOpen={showGenerationModal}
+        userType={userType || 'business'}
+        progress={generationProgress}
+        currentStep={currentGenerationStep}
+        onComplete={() => {
+          setShowGenerationModal(false);
+        }}
+      />
     </FormProvider>
   );
 }
