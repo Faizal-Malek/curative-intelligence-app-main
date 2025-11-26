@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseUserFromCookies } from '@/lib/supabase';
-import { ensureUserBySupabase } from '@/lib/user-supabase';
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from '@/lib/user-supabase';
 import { getUserSocialAccounts } from '@/lib/social-tokens';
 
 export async function GET() {
@@ -11,7 +11,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await ensureUserBySupabase(su.id, su.email ?? null);
+    const user = await ensureUserBySupabase(
+      su.id,
+      su.email ?? null,
+      extractProfileFromSupabaseUser(su)
+    );
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }

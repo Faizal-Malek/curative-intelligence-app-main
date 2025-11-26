@@ -20,8 +20,24 @@ model User {
   firstName               String?
   lastName                String?
   imageUrl                String?
+  phone                   String?
+  company                 String?
+  location                String?
+  bio                     String?
   plan                    String    @default("free")
   userType                String    @default("business")
+  role                    UserRole  @default(USER)
+  status                  UserStatus @default(ACTIVE)
+  lastLoginAt             DateTime?
+  loginCount              Int       @default(0)
+  
+  // Payment tracking
+  paymentStatus           PaymentStatus @default(UNPAID)
+  lastPaymentDate         DateTime?
+  nextPaymentDue          DateTime?
+  
+  // Navigation permissions (JSON array of allowed routes)
+  allowedNavigation       Json?     @default("[\"dashboard\",\"calendar\",\"vault\",\"analytics\",\"profile\",\"pricing\",\"settings\",\"support\"]")
 
   onboardingComplete      Boolean   @default(false)
   hasGeneratedFirstBatch  Boolean   @default(false)
@@ -35,6 +51,11 @@ model User {
   generationBatches       GenerationBatch[]
   reminders               Reminder[]
   socialMediaAccounts     SocialMediaAccount[]
+  notifications           Notification[]
+  supportTickets          SupportTicket[]
+  activityLogs            ActivityLog[]
+  contentIdeas            ContentIdea[]
+  contentTemplates        ContentTemplate[]
 }
 
 // FINALIZED MODEL: This is the single source of truth for the brand profile.
@@ -65,8 +86,16 @@ model Post {
   batch     GenerationBatch? @relation(fields: [batchId], references: [id])
 
   content   String
+  caption   String?
+  platform  String     @default("instagram")
   status    PostStatus @default(AWAITING_REVIEW)
   mediaUrl  String?
+
+  hashtags  String[]   @default([])
+  mentions  String[]   @default([])
+  
+  aiGenerated Boolean  @default(false)
+  metadata    Json?    @default("{}")
 
   likes     Int        @default(0)
   comments  Int        @default(0)
@@ -85,9 +114,38 @@ model GenerationBatch {
   
   status  BatchStatus   @default(PENDING)
   posts   Post[]
+  ideas   ContentIdea[]
 
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+}
+
+model ContentIdea {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchId   String?
+  batch     GenerationBatch?   @relation(fields: [batchId], references: [id])
+  title     String
+  content   String
+  tags      String[]           @default([])
+  status    ContentIdeaStatus  @default(DRAFT)
+  metadata  Json?              @default("{}")
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model ContentTemplate {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String
+  structure   Json?    @default("{}")
+  metadata    Json?    @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model JobQueue {
@@ -202,6 +260,13 @@ enum PostStatus {
   FAILED
 }
 
+enum ContentIdeaStatus {
+  DRAFT
+  READY
+  SCHEDULED
+  ARCHIVED
+}
+
 enum BatchStatus {
   PENDING
   PROCESSING
@@ -222,4 +287,126 @@ enum AnalyticsPeriod {
   DAILY
   WEEKLY
   MONTHLY
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  OWNER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+  DELETED
+}
+
+enum NotificationType {
+  SYSTEM
+  ADMIN_MESSAGE
+  ANNOUNCEMENT
+  WARNING
+  SUCCESS
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  OVERDUE
+  CANCELLED
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType  @default(SYSTEM)
+  title       String
+  message     String
+  isRead      Boolean           @default(false)
+  actionUrl   String?
+  createdBy   String?
+  createdAt   DateTime          @default(now())
+  readAt      DateTime?
+}
+
+model SupportTicket {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  description String
+  category    String
+  status      TicketStatus    @default(OPEN)
+  priority    TicketPriority  @default(MEDIUM)
+  adminNotes  String?
+  resolvedAt  DateTime?
+  messages    TicketMessage[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model TicketMessage {
+  id          String        @id @default(uuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId    String
+  senderName  String
+  isAdmin     Boolean       @default(false)
+  message     String
+  createdAt   DateTime      @default(now())
+  
+  @@index([ticketId, createdAt])
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  description String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, createdAt])
+}
+
+model SystemMetrics {
+  id                String   @id @default(uuid())
+  date              DateTime @unique
+  totalUsers        Int      @default(0)
+  activeUsers       Int      @default(0)
+  newUsers          Int      @default(0)
+  totalPosts        Int      @default(0)
+  postsGenerated    Int      @default(0)
+  instagramUsers    Int      @default(0)
+  facebookUsers     Int      @default(0)
+  twitterUsers      Int      @default(0)
+  linkedinUsers     Int      @default(0)
+  freeUsers         Int      @default(0)
+  proUsers          Int      @default(0)
+  enterpriseUsers   Int      @default(0)
+  createdAt         DateTime @default(now())
+  
+  @@index([date])
 }

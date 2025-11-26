@@ -47,10 +47,10 @@ export const Step3_SetGoals = () => {
               isInteractive={true}
               variant="glass"
               className={cn(
-                "relative h-full transition-all border-white/20 focus-visible:outline-none",
+                "relative h-full transition-all border-2 focus-visible:outline-none",
                 selectedGoal === goal.id
-                  ? "ring-2 ring-brand-tan shadow-[0_10px_30px_rgba(210,177,147,0.35)]"
-                  : "hover:shadow-[0_10px_26px_rgba(58,47,47,0.12)]"
+                  ? "border-brand-tan bg-gradient-to-br from-[#F7EADB] to-[#F9EFE5] ring-4 ring-brand-tan/30 shadow-[0_10px_30px_rgba(210,177,147,0.5)] scale-105"
+                  : "border-white/30 hover:border-brand-tan/50 hover:shadow-[0_10px_26px_rgba(58,47,47,0.12)] hover:scale-102"
               )}
             >
               <CardContent className="pt-6 flex flex-col items-center justify-center text-center space-y-4">
@@ -59,7 +59,7 @@ export const Step3_SetGoals = () => {
                 </div>
                 <p className="font-semibold text-brand-dark-umber">{goal.title}</p>
                 {selectedGoal === goal.id && (
-                  <span className="absolute top-3 right-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-tan text-white text-xs font-bold shadow">✓</span>
+                  <span className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#3A2F2F] to-[#2F2626] text-white text-sm font-bold shadow-lg ring-2 ring-white animate-scale-in">✓</span>
                 )}
               </CardContent>
             </Card>

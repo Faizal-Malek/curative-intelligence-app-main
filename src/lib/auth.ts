@@ -1,7 +1,5 @@
 import { prisma } from './prisma';
 
-export const AUTH_SESSION_CACHE_KEY = 'ci-auth-session-cache';
-
 /**
  * Get the current authenticated user from session
  * This is a placeholder implementation during the Clerk->Supabase migration

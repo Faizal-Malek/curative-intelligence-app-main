@@ -12,10 +12,17 @@ import {
   Sparkles,
   Menu,
   X,
+  CreditCard,
+  User,
+  Shield,
+  MessageSquare,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import UserMenu from "@/components/auth/UserMenu";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useUser } from "@/hooks/useUser";
+import { DEFAULT_ALLOWED_NAVIGATION } from "@/lib/navigation";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -55,9 +62,29 @@ const NAV_ITEMS: NavItem[] = [
     icon: FolderKanban,
   },
   {
+    label: "Support",
+    href: "/support",
+    icon: MessageSquare,
+  },
+  {
     label: "Analytics",
     href: "/analytics",
     icon: BarChart3,
+  },
+  {
+    label: "Admin",
+    href: "/admin",
+    icon: Shield,
+  },
+  {
+    label: "Profile",
+    href: "/profile",
+    icon: User,
+  },
+  {
+    label: "Pricing",
+    href: "/pricing",
+    icon: CreditCard,
   },
   {
     label: "Settings",
@@ -130,9 +157,50 @@ function ChildLink({
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isAdmin, isOwner } = useUser();
+
+  // Filter navigation items based on user role and permissions
+  const visibleNavItems = useMemo(() => {
+    // Owners see owner-specific navigation - they don't use AppShell
+    // They use OwnerNavbar instead, so redirect to owner dashboard
+    if (isOwner) {
+      return [];
+    }
+
+    // Admins see admin navigation
+    if (isAdmin) {
+      return NAV_ITEMS.filter((item) => {
+        // Hide Owner Dashboard
+        if (item.href === '/owner') return false;
+        // Show Admin
+        if (item.href === '/admin') return true;
+        // Hide Pricing for admins
+        if (item.href === '/pricing') return false;
+        return true;
+      });
+    }
+
+    // Regular users see navigation based on permissions set by owner
+    const allowedNavigation =
+      user?.navigation?.allowed ||
+      user?.allowedNavigation ||
+      [...DEFAULT_ALLOWED_NAVIGATION];
+
+    const hasRoute = (route: string) =>
+      user?.navigation?.lookup?.[route] ?? allowedNavigation.includes(route);
+
+    return NAV_ITEMS.filter((item) => {
+      // Hide Admin and Owner links
+      if (item.href === '/admin' || item.href === '/owner') return false;
+      
+      // Check if user has permission for this route
+      const route = item.href.replace('/', '');
+      return hasRoute(route);
+    });
+  }, [isAdmin, isOwner, user]);
 
   const activeNav = useMemo(() => {
-    for (const item of NAV_ITEMS) {
+    for (const item of visibleNavItems) {
       if (pathname.startsWith(item.href)) {
         if (item.children) {
           const child = item.children.find((child) => pathname === child.href);
@@ -142,7 +210,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       }
     }
     return { parent: undefined, child: undefined };
-  }, [pathname]);
+  }, [pathname, visibleNavItems]);
 
   const sidebarContent = (
     <div className="flex h-full flex-col border-r border-[#EADCCE] bg-white/75 px-5 py-6 backdrop-blur">
@@ -161,7 +229,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="flex-1 space-y-2">
-        {NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
@@ -226,7 +294,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </h2>
             </div>
           </div>
-          <UserMenu />
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <UserMenu />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#F8F2EA] via-[#FDF9F3] to-[#F0E3D2]">

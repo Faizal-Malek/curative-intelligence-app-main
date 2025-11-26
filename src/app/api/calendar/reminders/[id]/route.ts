@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getSupabaseUserFromCookies } from '@/lib/supabase'
-import { ensureUserBySupabase } from '@/lib/user-supabase'
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from '@/lib/user-supabase'
 
 const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -25,7 +25,11 @@ export async function GET(_req: Request, { params }: { params: ReminderRoutePara
   const su = await getSupabaseUserFromCookies()
   if (!su) return new NextResponse('Unauthorized', { status: 401 })
   
-  const user = await ensureUserBySupabase(su.id, su.email ?? null)
+  const user = await ensureUserBySupabase(
+    su.id,
+    su.email ?? null,
+    extractProfileFromSupabaseUser(su)
+  )
   if (!user) return new NextResponse('User not found', { status: 404 })
   
   const item = await prisma.reminder.findFirst({ where: { id, userId: user.id } })
@@ -40,7 +44,11 @@ export async function PUT(req: Request, { params }: { params: ReminderRouteParam
     const su = await getSupabaseUserFromCookies()
     if (!su) return new NextResponse('Unauthorized', { status: 401 })
     
-    const user = await ensureUserBySupabase(su.id, su.email ?? null)
+    const user = await ensureUserBySupabase(
+      su.id,
+      su.email ?? null,
+      extractProfileFromSupabaseUser(su)
+    )
     if (!user) return new NextResponse('User not found', { status: 404 })
     
     const body = await req.json()
@@ -65,7 +73,11 @@ export async function DELETE(_req: Request, { params }: { params: ReminderRouteP
     const su = await getSupabaseUserFromCookies()
     if (!su) return new NextResponse('Unauthorized', { status: 401 })
     
-    const user = await ensureUserBySupabase(su.id, su.email ?? null)
+    const user = await ensureUserBySupabase(
+      su.id,
+      su.email ?? null,
+      extractProfileFromSupabaseUser(su)
+    )
     if (!user) return new NextResponse('User not found', { status: 404 })
     
     const r = await prisma.reminder.deleteMany({ where: { id, userId: user.id } })

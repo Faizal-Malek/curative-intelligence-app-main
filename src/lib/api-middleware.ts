@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseUserFromCookies } from './supabase';
-import { ensureUserBySupabase } from './user-supabase';
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from './user-supabase';
 import { createError, createErrorResponse, logError } from './error-handler';
 import { z, ZodSchema } from 'zod';
 import { rateLimit } from './rate-limiter';
@@ -100,13 +100,24 @@ export function withApiMiddleware(
           throw createError.unauthorized('Authentication required');
         }
 
-        const user = await ensureUserBySupabase(
-          supabaseUser.id,
-          supabaseUser.email ?? null
-        );
-        
+        // Try cache first to avoid database hit
+        const { cache, CacheKeys, CacheTTL } = await import('./cache');
+        const cacheKey = CacheKeys.userByClerkId(supabaseUser.id);
+        let user = cache.get<any>(cacheKey);
+
         if (!user) {
-          throw createError.unauthorized('User not found in database');
+          user = await ensureUserBySupabase(
+            supabaseUser.id,
+            supabaseUser.email ?? null,
+            extractProfileFromSupabaseUser(supabaseUser)
+          );
+          
+          if (!user) {
+            throw createError.unauthorized('User not found in database');
+          }
+
+          // Cache for 2 minutes
+          cache.set(cacheKey, user, CacheTTL.MEDIUM * 2);
         }
 
         context.user = {

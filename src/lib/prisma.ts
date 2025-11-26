@@ -27,6 +27,24 @@ export const prisma =
     datasources: overriddenUrl
       ? { db: { url: overriddenUrl } }
       : undefined,
+    // Optimize connection pool settings
+    // Removed pool settings as they're now in connection string
+  }).$extends({
+    query: {
+      async $allOperations({ operation, model, args, query }) {
+        const start = performance.now();
+        const result = await query(args);
+        const end = performance.now();
+        const time = end - start;
+        
+        // Log slow queries
+        if (time > 1000) {
+          console.warn(`[Prisma] Slow query: ${model}.${operation} took ${time.toFixed(2)}ms`);
+        }
+        
+        return result;
+      },
+    },
   });
 
 if (process.env.NODE_ENV !== 'production') {

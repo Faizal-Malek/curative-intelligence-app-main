@@ -15,16 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-// Simple Skeleton component
-const Skeleton = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={`animate-pulse rounded-md bg-white/30 ${className || ""}`}
-    {...props}
-  />
-);
+import { Skeleton } from "@/components/ui/Skeleton";
 
 // (Sidebar icons removed - AppShell provides navigation)
 
@@ -376,9 +367,9 @@ export default function CalendarPage() {
           <CardContent className="pt-0">
             {todaysEventsLoading && (
               <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-24 rounded-lg" />
-                <Skeleton className="h-12 w-32 rounded-lg" />
-                <Skeleton className="h-12 w-28 rounded-lg" />
+                <Skeleton className="h-12 w-28 rounded-xl" />
+                <Skeleton className="h-12 w-36 rounded-xl" />
+                <Skeleton className="h-12 w-32 rounded-xl" />
               </div>
             )}
             {!todaysEventsLoading && todaysEvents.length === 0 && (
@@ -531,19 +522,17 @@ export default function CalendarPage() {
             {/* Calendar Days */}
             <div className="grid grid-cols-7 gap-2">
               {eventsLoading
-                ? skeletonKeys.map((sk) => (
+                ? skeletonKeys.map((sk, idx) => (
                     <div
                       key={sk}
-                      className="min-h-32 rounded-lg border border-[#EFE8D8] p-3"
+                      className="min-h-32 rounded-xl border border-[#EFE8D8] p-3 bg-white/60"
+                      style={{ animationDelay: `${idx * 60}ms` }}
                     >
-                      <Skeleton className="h-4 w-6 mb-2" />
-                      <div className="space-y-1">
-                        {Math.random() > 0.5 && (
-                          <Skeleton className="h-6 w-full rounded" />
-                        )}
-                        {Math.random() > 0.7 && (
-                          <Skeleton className="h-6 w-full rounded" />
-                        )}
+                      <Skeleton className="h-4 w-8 mb-3 rounded-md" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-full rounded-md" />
+                        <Skeleton className="h-5 w-3/4 rounded-md" />
+                        <Skeleton className="h-5 w-2/3 rounded-md" />
                       </div>
                     </div>
                   ))
@@ -633,40 +622,46 @@ export default function CalendarPage() {
 
       {/* Edit Reminder Modal */}
       {editingReminder && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card variant="glass" className="max-w-md mx-4 w-full">
-            <CardHeader>
-              <CardTitle className="text-white">Edit Reminder</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="relative mx-4 w-full max-w-lg rounded-2xl bg-white shadow-2xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-[#2F2626]">Edit Reminder</h2>
+              <button
+                onClick={() => setEditingReminder(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#6B5E5E] hover:bg-gray-100 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-5">
               <div>
                 <label
                   htmlFor="edit-title"
-                  className="text-sm font-mediummb-2 block text-white"
+                  className="mb-2 block text-sm font-medium text-[#2F2626]"
                 >
                   Title
                 </label>
-                <Input
+                <input
                   id="edit-title"
-                  className="text-white"
+                  type="text"
                   value={editForm.title}
                   onChange={(e) =>
                     setEditForm((prev) => ({ ...prev, title: e.target.value }))
                   }
                   placeholder="Reminder title"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#2F2626] placeholder-gray-400 focus:border-[#D2B193] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="edit-description"
-                  className="text-sm font-medium mb-2 block text-white"
+                  className="mb-2 block text-sm font-medium text-[#2F2626]"
                 >
                   Description
                 </label>
-                <Textarea
+                <textarea
                   id="edit-description"
-                  className="text-white"
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm((prev) => ({
@@ -676,13 +671,14 @@ export default function CalendarPage() {
                   }
                   placeholder="Optional description"
                   rows={3}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#2F2626] placeholder-gray-400 focus:border-[#D2B193] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/20 resize-none"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="edit-category"
-                  className="text-sm font-medium text-white mb-2 block"
+                  className="mb-2 block text-sm font-medium text-[#2F2626]"
                 >
                   Category
                 </label>
@@ -696,7 +692,7 @@ export default function CalendarPage() {
                         category: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 bg-white/90 border border-[#EFE8D8] rounded-lg text-[#3A2F2F] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/50 focus:border-[#D2B193] appearance-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-[#2F2626] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/20 focus:border-[#D2B193] appearance-none cursor-pointer"
                   >
                     {categoryOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -714,7 +710,7 @@ export default function CalendarPage() {
                       )?.color
                     }`}
                   ></div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-[#7A6F6F]">
                     Selected category color
                   </span>
                 </div>
@@ -724,28 +720,29 @@ export default function CalendarPage() {
                 <div>
                   <label
                     htmlFor="edit-date"
-                    className="text-sm font-medium text-white mb-2 block"
+                    className="mb-2 block text-sm font-medium text-[#2F2626]"
                   >
                     Date
                   </label>
-                  <Input
+                  <input
                     id="edit-date"
                     type="date"
                     value={editForm.date}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, date: e.target.value }))
                     }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#2F2626] focus:border-[#D2B193] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/20"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="edit-time"
-                    className="text-sm font-medium text-white mb-2 block"
+                    className="mb-2 block text-sm font-medium text-[#2F2626]"
                   >
                     Time
                   </label>
-                  <Input
+                  <input
                     id="edit-time"
                     type="time"
                     value={editForm.time}
@@ -753,6 +750,7 @@ export default function CalendarPage() {
                       setEditForm((prev) => ({ ...prev, time: e.target.value }))
                     }
                     disabled={editForm.allDay}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#2F2626] focus:border-[#D2B193] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -768,37 +766,38 @@ export default function CalendarPage() {
                       allDay: e.target.checked,
                     }))
                   }
-                  className="rounded border-[#EFE8D8]"
+                  className="rounded border-gray-300 text-[#D2B193] focus:ring-[#D2B193]"
                 />
-                <label htmlFor="edit-all-day" className="text-sm text-white">
+                <label htmlFor="edit-all-day" className="text-sm text-[#2F2626]">
                   All day event
                 </label>
               </div>
 
-              <div className="flex gap-3 justify-end pt-4">
+              <div className="flex gap-3 pt-2">
                 <Button
-                  variant="secondary"
-                  onClick={() => setEditingReminder(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
                   onClick={updateReminder}
                   disabled={!editForm.title.trim()}
+                  className="flex-1 bg-[#D2B193] hover:bg-[#C2A183] text-white"
                 >
                   Update
                 </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setEditingReminder(null)}
+                  className="flex-1 border border-gray-300 bg-white text-[#2F2626] hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Add Reminder Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card variant="glass" className="max-w-md mx-4 w-full">
+        <div className="fixed inset-0 bg-[#3A2F2F]/40 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
+          <Card variant="glass" className="max-w-md mx-4 w-full border border-[#D2B193]/30 bg-gradient-to-br from-[#6B5E5E]/95 via-[#5A4F4F]/95 to-[#4A3F3F]/95 backdrop-blur-xl shadow-[0_25px_100px_rgba(58,47,47,0.4)]">
             <CardHeader>
               <CardTitle className="text-white">Add Reminder</CardTitle>
             </CardHeader>

@@ -5,11 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 import AppShell from "@/components/layout/AppShell";
-import { AUTH_SESSION_CACHE_KEY } from "@/lib/auth";
+import { AUTH_SESSION_CACHE_KEY } from "@/lib/auth-constants";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 const AUTH_ROUTES = ["/sign-in", "/sign-up"] as const;
-const SHELL_EXCLUDE_PREFIXES = ["/onboarding"] as const;
+const SHELL_EXCLUDE_PREFIXES = ["/onboarding", "/owner"] as const;
 
 const LoadingScreen = () => (
   <div className="relative min-h-screen w-full overflow-hidden bg-brand-alabaster">
@@ -149,6 +149,10 @@ export default function AppLayout({
           .then((json) => {
             if (json?.onboardingComplete) {
               writeStatusCache(json);
+              // Redirect owners to owner dashboard if they're on regular dashboard
+              if (json.role === 'OWNER' && pathname === '/dashboard') {
+                redirectTo('/owner/dashboard');
+              }
             }
           })
           .catch(() => {});
@@ -167,6 +171,11 @@ export default function AppLayout({
           const json = await response.json();
           writeStatusCache(json);
           if (json.onboardingComplete) {
+            // Redirect owners to owner dashboard if they're on regular dashboard
+            if (json.role === 'OWNER' && pathname === '/dashboard') {
+              redirectTo('/owner/dashboard');
+              return false;
+            }
             return true;
           }
         }
@@ -225,7 +234,7 @@ export default function AppLayout({
       cancelled = true;
       listener.subscription?.unsubscribe?.();
     };
-  }, [pathname, router, supabase]);
+  }, [isOnboardingRoute, pathname, router, supabase]);
 
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 

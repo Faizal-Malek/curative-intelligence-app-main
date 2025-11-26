@@ -2,16 +2,18 @@
 
 import { NextResponse } from 'next/server';
 import { getSupabaseUserFromCookies } from '@/lib/supabase';
-import { ensureUserBySupabase } from '@/lib/user-supabase';
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from '@/lib/user-supabase';
 
 type StatusResponse = {
   onboardingComplete: boolean;
   userType: 'business' | 'influencer' | null;
+  role?: string;
 };
 
 const DEFAULT_STATUS: StatusResponse = {
   onboardingComplete: false,
   userType: null,
+  role: 'USER',
 };
 
 export async function GET() {
@@ -23,7 +25,11 @@ export async function GET() {
     }
 
     try {
-      const user = await ensureUserBySupabase(supabaseUser.id, supabaseUser.email ?? null);
+      const user = await ensureUserBySupabase(
+        supabaseUser.id,
+        supabaseUser.email ?? null,
+        extractProfileFromSupabaseUser(supabaseUser)
+      );
 
       if (!user) {
         return NextResponse.json(DEFAULT_STATUS);
@@ -37,6 +43,7 @@ export async function GET() {
       return NextResponse.json({
         onboardingComplete: Boolean(user.onboardingComplete),
         userType,
+        role: user.role,
       });
     } catch (innerError) {
       console.error('[API /user/status] Failed to resolve user:', innerError);

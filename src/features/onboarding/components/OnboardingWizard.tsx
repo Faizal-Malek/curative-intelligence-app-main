@@ -309,26 +309,44 @@ export default function OnboardingWizard() {
         ? ['Analyzing brand profile', 'Setting up brand voice', 'Configuring content templates', 'Personalizing dashboard', 'Generating initial recommendations']
         : ['Analyzing creator profile', 'Understanding your audience', 'Configuring content style', 'Personalizing dashboard', 'Generating content ideas'];
 
-      for (let i = 0; i < steps.length; i++) {
-        setCurrentGenerationStep(steps[i]);
-        setGenerationProgress(((i + 1) / steps.length) * 100);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+      // Start AI workspace generation
+      setCurrentGenerationStep(steps[0]);
+      setGenerationProgress(10);
 
-      // Generate personalized workspace configuration
-      const workspaceConfig = await generatePersonalizedWorkspace(userType, payload);
-      
-      // Save workspace config to database
-      const userRes = await fetch('/api/user/status');
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        if (userData.id) {
-          await saveWorkspaceConfig(userData.id, workspaceConfig);
+      // Call AI generation API
+      const aiResponse = await fetch('/api/ai/generate-workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboardingData: payload }),
+      });
+
+      if (aiResponse.ok) {
+        const workspaceData = await aiResponse.json();
+        
+        // Animate through the steps
+        for (let i = 0; i < steps.length; i++) {
+          setCurrentGenerationStep(steps[i]);
+          setGenerationProgress(20 + ((i + 1) / steps.length) * 70);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
+        toast({
+          variant: 'success',
+          title: 'Workspace Generated!',
+          description: `Created ${workspaceData.workspace?.contentIdeasCount || 0} content ideas and ${workspaceData.workspace?.templatesCount || 0} templates for you.`,
+        });
+      } else {
+        // Fallback: still show progress but without AI content
+        for (let i = 0; i < steps.length; i++) {
+          setCurrentGenerationStep(steps[i]);
+          setGenerationProgress(20 + ((i + 1) / steps.length) * 70);
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
 
       // Complete and redirect
       setGenerationProgress(100);
+      setCurrentGenerationStep('All set!');
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       router.push('/dashboard');

@@ -13,7 +13,6 @@ export default function SettingsPage() {
       label: "Social Media",
       icon: <LinkIcon className="h-4 w-4" />,
     },
-    { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
     {
       id: "notifications",
       label: "Notifications",
@@ -64,22 +63,6 @@ export default function SettingsPage() {
                 analytics and track your content performance across platforms.
               </p>
               <SocialMediaConnections />
-            </div>
-          )}
-
-          {activeTab === "profile" && (
-            <div>
-              <h2 className="text-xl font-semibold text-[#2D2424] mb-4">
-                Profile Settings
-              </h2>
-              <p className="text-[#6B5E5E] mb-6">
-                Manage your personal information and account preferences.
-              </p>
-              <div className="bg-white/50 rounded-xl p-6 border border-[#EFE8D8]">
-                <p className="text-[#6B5E5E]">
-                  Profile settings coming soon...
-                </p>
-              </div>
             </div>
           )}
 

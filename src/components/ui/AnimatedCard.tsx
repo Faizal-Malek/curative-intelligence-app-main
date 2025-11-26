@@ -24,12 +24,9 @@ export default function AnimatedCard({ children, className = '', ariaLabel, onAc
       tabIndex={0}
       onKeyDown={handleKey}
       onClick={() => onActivate?.()}
-      className={`transform-gpu will-change-transform bg-white/5 backdrop-blur border border-white/6 rounded-xl shadow-lg p-6 transition-transform duration-300 ease-out hover:scale-[1.03] focus:scale-[1.03] hover:-translate-y-1 hover:rotate-0 hover:shadow-2xl focus:shadow-2xl ${className}`}
-      style={{ perspective: 1000 }}
+      className={`bg-white/5 backdrop-blur border border-white/6 rounded-xl shadow-lg p-6 transition-all duration-300 ease-out ${className}`}
     >
-      <div className="transform transition-transform duration-500 will-change-transform hover:rotate-1">
-        {children}
-      </div>
+      {children}
     </div>
   )
 }

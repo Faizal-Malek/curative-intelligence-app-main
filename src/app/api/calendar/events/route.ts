@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSupabaseUserFromCookies } from '@/lib/supabase'
-import { ensureUserBySupabase } from '@/lib/user-supabase'
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from '@/lib/user-supabase'
 
 function parseRange(searchParams: URLSearchParams) {
   const start = searchParams.get('start')
@@ -25,7 +25,11 @@ export async function GET(req: Request) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    const user = await ensureUserBySupabase(su.id, su.email ?? null)
+    const user = await ensureUserBySupabase(
+      su.id,
+      su.email ?? null,
+      extractProfileFromSupabaseUser(su)
+    )
     if (!user) {
       console.log('[API /calendar/events] User not found in database')
       return new NextResponse('User not found', { status: 404 })

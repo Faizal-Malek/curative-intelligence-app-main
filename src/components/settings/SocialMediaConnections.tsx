@@ -28,9 +28,9 @@ const socialPlatforms: SocialMediaPlatform[] = [
   {
     id: 'instagram',
     name: 'Instagram',
-    icon: '📸',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
     description: 'Connect your Instagram Business account to import posts, stories, and engagement analytics.',
-    color: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    color: 'bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF]',
     limitations: [
       'Requires Instagram Business Account',
       'Basic Display API has limited metrics',
@@ -42,9 +42,9 @@ const socialPlatforms: SocialMediaPlatform[] = [
   {
     id: 'facebook',
     name: 'Facebook',
-    icon: '👥',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg',
     description: 'Import your Facebook page insights, post engagement, and audience demographics.',
-    color: 'bg-gradient-to-r from-blue-600 to-blue-700',
+    color: 'bg-[#1877F2]',
     limitations: [
       'Requires Facebook Page (not personal profile)',
       'App Review required for advanced permissions',
@@ -56,9 +56,9 @@ const socialPlatforms: SocialMediaPlatform[] = [
   {
     id: 'twitter',
     name: 'Twitter (X)',
-    icon: '🐦',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/5/57/X_logo_2023_%28white%29.png',
     description: 'Analyze your tweets, engagement rates, and follower growth over time.',
-    color: 'bg-gradient-to-r from-sky-500 to-blue-600',
+    color: 'bg-black',
     limitations: [
       'Twitter API v2 Essential access (free tier)',
       'Limited to 2M tweets per month',
@@ -70,9 +70,9 @@ const socialPlatforms: SocialMediaPlatform[] = [
   {
     id: 'linkedin',
     name: 'LinkedIn',
-    icon: '💼',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png',
     description: 'Track your professional content performance and network growth.',
-    color: 'bg-gradient-to-r from-blue-700 to-blue-800',
+    color: 'bg-[#0A66C2]',
     limitations: [
       'LinkedIn Marketing API access required',
       'Limited to Company Pages for full analytics',
@@ -197,8 +197,8 @@ export default function SocialMediaConnections() {
           <div key={platform.id} className="bg-white/50 rounded-xl p-6 border border-[#EFE8D8]">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 ${platform.color} rounded-xl flex items-center justify-center text-2xl`}>
-                  {platform.icon}
+                <div className={`w-12 h-12 ${platform.color} rounded-xl flex items-center justify-center p-2 shadow-md`}>
+                  <img src={platform.icon} alt={platform.name} className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-[#2D2424]">{platform.name}</h3>

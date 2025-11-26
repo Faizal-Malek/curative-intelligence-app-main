@@ -9,6 +9,7 @@ interface CacheConfig {
   ttl?: number; // Time to live in milliseconds
   maxSize?: number; // Maximum cache size
   enabled?: boolean;
+  staleWhileRevalidate?: boolean; // Serve cache immediately but refresh in background
 }
 
 // Request configuration
@@ -213,19 +214,26 @@ export function useApi<T>(
     const cacheConfig = currentConfig.cache || {};
     
     // Check cache first
+    let cachedData: T | null = null;
+    let shouldSkipNetwork = false;
+
     if (cacheConfig.enabled !== false && currentConfig.method === 'GET') {
       const cacheKey = generateCacheKey(url, currentConfig);
-      const cachedData = globalCache.get<T>(cacheKey);
+      cachedData = globalCache.get<T>(cacheKey);
       
       if (cachedData) {
         setData(cachedData);
         setError(null);
-        return;
+        shouldSkipNetwork = cacheConfig.staleWhileRevalidate === false;
+        if (shouldSkipNetwork) {
+          setLoading(false);
+          return;
+        }
       }
     }
 
     try {
-      setLoading(true);
+      setLoading(!cachedData);
       setError(null);
 
       // Create new abort controller for this request
@@ -455,5 +463,35 @@ export function useCalendarEvents(date?: string) {
   const url = date ? `/api/calendar/events?date=${date}` : '/api/calendar/events';
   return useApi(url, {
     cache: { ttl: 1 * 60 * 1000 }, // 1 minute
+  });
+}
+
+// User profile hook
+// Uses /api/user/profile which returns { user: {...} }
+export interface UserProfileResponse {
+  user: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    imageUrl?: string | null;
+    plan: string;
+    userType: string;
+    role: string;
+    status: string;
+    allowedNavigation: string[];
+    navigation: { allowed: string[]; lookup: Record<string, boolean> };
+    onboardingComplete: boolean;
+    createdAt: string;
+    company?: string | null;
+    location?: string | null;
+    bio?: string | null;
+  };
+}
+
+export function useUserProfile() {
+  return useApi<UserProfileResponse>('/api/user/profile', {
+    cache: { ttl: 60 * 1000 }, // 1 minute
+    retry: { attempts: 2, delay: 800 },
   });
 }

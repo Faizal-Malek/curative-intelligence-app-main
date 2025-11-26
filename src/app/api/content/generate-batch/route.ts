@@ -5,6 +5,7 @@ import { enqueueGenerationJob } from '@/lib/queue';
 import { withApiMiddleware } from '@/lib/api-middleware';
 import { logger } from '@/lib/monitoring';
 import { createError } from '@/lib/error-handler';
+import { generateVaultAssetsForUser } from '@/services/content-vault';
 
 async function handler(request: NextRequest, context: { user?: any }) {
   const { user } = context;
@@ -55,6 +56,16 @@ async function handler(request: NextRequest, context: { user?: any }) {
     userId: userRecord.id, 
     batchId: batch.id 
   });
+
+  try {
+    await generateVaultAssetsForUser(userRecord.id, { batchId: batch.id })
+  } catch (vaultError) {
+    logger.warn('Failed to generate vault assets for batch', {
+      userId: userRecord.id,
+      batchId: batch.id,
+      error: (vaultError as Error).message,
+    })
+  }
 
   // Immediately return the batchId to the frontend.
   return NextResponse.json({ success: true, batchId: batch.id });

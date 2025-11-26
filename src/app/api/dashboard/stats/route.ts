@@ -19,26 +19,29 @@ async function handler(request: NextRequest, context: { user?: any }) {
   let ideasInVault = 0
   let recentActivity = 0
   
+  // Query each table separately to handle missing tables gracefully
   try {
-    const [scheduledPostsResult, ideasInVaultResult, recentActivityResult] = await Promise.all([
-      db.post.count({ where: { userId: user.id, status: PostStatus.SCHEDULED } }),
-      db.post.count({ where: { userId: user.id } }),
-      db.generationBatch.count({ where: { userId: user.id } }),
-    ])
-    scheduledPosts = scheduledPostsResult
-    ideasInVault = ideasInVaultResult  
-    recentActivity = recentActivityResult
+    scheduledPosts = await db.post.count({ 
+      where: { userId: user.id, status: PostStatus.SCHEDULED } 
+    }).catch(() => 0)
   } catch (error: any) {
-    logger.warn('Database schema missing columns, using defaults', { 
-      userId: user.id, 
-      error: error.message 
-    })
-    // Gracefully handle missing columns with defaults
-    try {
-      recentActivity = await db.generationBatch.count({ where: { userId: user.id } })
-    } catch {
-      logger.warn('GenerationBatch query also failed, using 0', { userId: user.id })
-    }
+    logger.debug('Post table query failed, using 0', { userId: user.id })
+  }
+  
+  try {
+    ideasInVault = await db.contentIdea.count({ 
+      where: { userId: user.id } 
+    }).catch(() => 0)
+  } catch (error: any) {
+    logger.debug('ContentIdea table query failed, using 0', { userId: user.id })
+  }
+  
+  try {
+    recentActivity = await db.generationBatch.count({ 
+      where: { userId: user.id } 
+    }).catch(() => 0)
+  } catch (error: any) {
+    logger.debug('GenerationBatch table query failed, using 0', { userId: user.id })
   }
 
   const stats = {

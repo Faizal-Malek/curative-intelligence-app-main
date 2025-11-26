@@ -23,10 +23,15 @@ export default function GoogleButton({ label = 'Continue with Google', redirectT
         typeof window !== 'undefined' && window.location.origin
           ? window.location.origin
           : process.env.NEXT_PUBLIC_SITE_URL || ''
+      
+      // Redirect to auth callback which will create the database user
+      const callbackUrl = `${origin}/api/auth/callback`
+      const finalDestination = redirectTo || '/dashboard'
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectTo || `${origin}/dashboard`,
+          redirectTo: `${callbackUrl}?next=${encodeURIComponent(finalDestination)}`,
           queryParams: { prompt: 'select_account' },
         },
       })

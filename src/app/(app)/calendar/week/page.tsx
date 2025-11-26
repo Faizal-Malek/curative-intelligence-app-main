@@ -88,7 +88,7 @@ export default function CalendarWeekPage() {
         <div className="text-xl font-semibold text-[#3A2F2F]">Week: {weekLabel}</div>
         <div className="space-x-2">
           <button className="rounded-md border border-white/30 bg-white/20 px-3 py-1 text-sm text-[#3A2F2F] hover:bg-white/30" onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth(), c.getDate() - 7))}>Prev</button>
-          <button className="rounded-md border border-white/30 bg-white/20 px-3 py-1 text-sm text-[#3A2F2F] hover:bg-white/30" onClick={() => setCursor(new Date())}>Today</button>
+          <button className="rounded-md border border-white/30 bg-white/20 px-3 py-1 text-sm text-[#3A2F2F] hover:bg-white/30" onClick={() => setCursor(new Date())}>Day</button>
           <button className="rounded-md border border-white/30 bg-white/20 px-3 py-1 text-sm text-[#3A2F2F] hover:bg-white/30" onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth(), c.getDate() + 7))}>Next</button>
         </div>
       </div>

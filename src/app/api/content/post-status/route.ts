@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSupabaseUserFromCookies } from '@/lib/supabase'
-import { ensureUserBySupabase } from '@/lib/user-supabase'
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from '@/lib/user-supabase'
 
 // This schema validates the data sent from the frontend.
 const updateStatusSchema = z.object({
@@ -32,7 +32,11 @@ export async function PATCH(req: Request) {
   const prismaStatus = status === 'APPROVED' ? 'IDEA_APPROVED' : 'FAILED';
 
     // 3. Resolve Clerk user to internal user id
-  const user = await ensureUserBySupabase(su.id, su.email ?? null);
+  const user = await ensureUserBySupabase(
+    su.id,
+    su.email ?? null,
+    extractProfileFromSupabaseUser(su)
+  );
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

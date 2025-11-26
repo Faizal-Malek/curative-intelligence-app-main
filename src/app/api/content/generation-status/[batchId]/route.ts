@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma as db } from "@/lib/prisma";
 import { getSupabaseUserFromCookies } from '@/lib/supabase'
-import { ensureUserBySupabase } from '@/lib/user-supabase'
+import { ensureUserBySupabase, extractProfileFromSupabaseUser } from '@/lib/user-supabase'
 
 // This is the handler for a GET request to this endpoint.
 export async function GET(
@@ -17,7 +17,11 @@ export async function GET(
     }
 
     // Resolve to internal user
-    const user = await ensureUserBySupabase(su.id, su.email ?? null);
+    const user = await ensureUserBySupabase(
+      su.id,
+      su.email ?? null,
+      extractProfileFromSupabaseUser(su)
+    );
     if (!user) {
       return new NextResponse("User not found", { status: 404 });
     }
