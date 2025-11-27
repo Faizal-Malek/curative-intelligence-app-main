@@ -36,6 +36,10 @@ model User {
   lastPaymentDate         DateTime?
   nextPaymentDue          DateTime?
   
+  // Storage tracking (in bytes)
+  storageUsed             BigInt    @default(0)
+  storageLimit            BigInt    @default(1073741824) // 1GB default
+  
   // Navigation permissions (JSON array of allowed routes)
   allowedNavigation       Json?     @default("[\"dashboard\",\"calendar\",\"vault\",\"analytics\",\"profile\",\"pricing\",\"settings\",\"support\"]")
 
@@ -131,6 +135,9 @@ model ContentIdea {
   tags      String[]           @default([])
   status    ContentIdeaStatus  @default(DRAFT)
   metadata  Json?              @default("{}")
+  mediaUrl  String?
+  fileSize  BigInt?            @default(0)
+  mimeType  String?
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 }

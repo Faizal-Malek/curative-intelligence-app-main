@@ -365,11 +365,46 @@ function OwnerDashboard() {
   ];
 
   const platformStats: Array<{ label: string; value: string; helper: string }> = [
-    { label: 'Latency', value: '182ms', helper: '95% requests • NA region' },
+    { label: 'Latency', value: '182ms', helper: '95% requests / NA region' },
     { label: 'Global reach', value: '42 countries', helper: 'Top: US, UK, AE' },
     { label: 'Automation', value: '318 flows', helper: '+12 launched this week' },
   ];
 
+  const headerPills = useMemo(
+    () => [
+      {
+        label: 'Active users',
+        value: stats?.activeUsers ?? 0,
+        helper: 'Past 24h',
+        tone: 'emerald' as const,
+      },
+      {
+        label: 'MRR',
+        value: currencyFormatter.format(stats?.monthlyRevenue ?? 0),
+        helper: 'This month',
+        tone: 'amber' as const,
+      },
+      {
+        label: 'Open tickets',
+        value: stats?.openTickets ?? 0,
+        helper: 'Support load',
+        tone: stats && stats.openTickets > 8 ? ('red' as const) : ('amber' as const),
+      },
+      {
+        label: 'Uptime',
+        value: stats?.platformUptime ?? '—',
+        helper: 'Platform health',
+        tone: 'blue' as const,
+      },
+    ],
+    [currencyFormatter, stats]
+  );
+  const pillToneStyles = {
+    amber: 'border-amber-100 bg-amber-50 text-amber-700',
+    blue: 'border-blue-100 bg-blue-50 text-blue-700',
+    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-700',
+    red: 'border-red-100 bg-red-50 text-red-700',
+  } as const;
   if ((loading || !stats) && !error) {
     return (
       <div className="relative min-h-screen overflow-hidden bg-[#F8F2EA]">
@@ -518,27 +553,72 @@ function OwnerDashboard() {
         <div className="absolute left-1/4 top-1/3 h-64 w-64 rounded-full bg-[#B89B7B]/20 blur-[120px]" aria-hidden="true" />
         <div className="absolute bottom-[-120px] right-0 h-72 w-72 rounded-full bg-[#F2E7DA] blur-3xl" aria-hidden="true" />
       </div>
-      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#5D4037] to-[#3E2723] shadow">
-              <Shield className="h-6 w-6 text-white" />
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 rounded-3xl border border-[#EADCCE] bg-gradient-to-r from-[#FDF9F3] via-[#F3E5D7] to-[#FBF5EC] p-6 shadow-[0_20px_60px_rgba(58,47,47,0.12)] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#5D4037] to-[#3E2723] shadow">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-[#2F2626]">Owner Dashboard</h1>
+                  <p className="text-sm text-[#6B5E5E]">Mission control for a multi-million dollar platform</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {headerPills.map((pill, index) => (
+                  <div
+                    key={pill.label}
+                    className={cn(
+                      'min-w-[150px] rounded-2xl border px-4 py-3 backdrop-blur shadow-sm animate-fade-up',
+                      pillToneStyles[pill.tone]
+                    )}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#6B5E5E]">{pill.label}</p>
+                    <p className="mt-1 text-xl font-semibold text-[#2F2626]">{pill.value}</p>
+                    <p className="text-xs text-[#6B5E5E]">{pill.helper}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-[#2F2626]">Owner Dashboard</h1>
-              <p className="text-sm text-[#6B5E5E]">Mission control for a multi-million dollar platform</p>
+            <div className="flex h-full flex-col justify-between gap-3 rounded-2xl border border-white/40 bg-white/60 p-4 shadow-inner">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[#6B5E5E]">
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                  Platform operational
+                </span>
+                {formattedUpdatedAt && <span className="text-xs">Synced {formattedUpdatedAt}</span>}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#EADCCE] bg-[#2F2626] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3d3131]"
+                >
+                  <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+                  Refresh metrics
+                </button>
+                <Link
+                  href="/owner/support"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#EADCCE] bg-white/80 px-4 py-2 text-sm font-semibold text-[#2F2626] transition-colors hover:border-[#D2B193]"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Support queue
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm text-[#6B5E5E]">
+                <div className="rounded-xl border border-[#EADCCE] bg-white/80 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.26em] text-[#B89B7B]">Paid users</p>
+                  <p className="text-lg font-semibold text-[#2F2626]">{stats!.paidUsers}</p>
+                </div>
+                <div className="rounded-xl border border-[#EADCCE] bg-white/80 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.26em] text-[#B89B7B]">Monthly revenue</p>
+                  <p className="text-lg font-semibold text-[#2F2626]">{currencyFormatter.format(stats!.monthlyRevenue)}</p>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-[#6B5E5E]">
-            {formattedUpdatedAt && <span className="text-xs">Synced {formattedUpdatedAt}</span>}
-            <button
-              type="button"
-              onClick={handleRefresh}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EADCCE] bg-white/80 px-4 py-2 font-medium text-[#2F2626] shadow-sm transition-colors hover:border-[#D2B193]"
-            >
-              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-              Refresh metrics
-            </button>
           </div>
         </div>
 
@@ -578,7 +658,7 @@ function OwnerDashboard() {
           </div>
         )}
 
-        <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard title="Total Users" value={stats!.totalUsers} icon={Users} color="blue" href="/owner/users" animationIndex={0} />
           <MetricCard
             title="Active Users (24h)"
@@ -607,7 +687,7 @@ function OwnerDashboard() {
           />
         </div>
 
-        <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <MetricCard
             title="Paid Users"
             value={stats!.paidUsers}
@@ -628,7 +708,7 @@ function OwnerDashboard() {
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
           <div className="rounded-2xl border border-[#EADCCE] bg-white/75 p-6 backdrop-blur">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-[#2F2626]">Plan Distribution</h2>
@@ -705,7 +785,7 @@ function OwnerDashboard() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {executiveInsights.map((insight, index) => (
             <div
               key={insight.label}
@@ -724,7 +804,7 @@ function OwnerDashboard() {
           ))}
         </div>
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-[1.8fr_1.2fr]">
+        <div className="mt-6 grid gap-5 xl:grid-cols-[1.8fr_1.2fr]">
           <div className="rounded-2xl border border-[#EADCCE] bg-white/80 p-6 backdrop-blur">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -814,7 +894,7 @@ function OwnerDashboard() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="rounded-2xl border border-[#EADCCE] bg-white/80 p-6 backdrop-blur">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-[#2F2626]">Customer Health</h2>
@@ -882,7 +962,7 @@ function OwnerDashboard() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {quickLinks.map((link, index) => {
             const Icon = link.icon;
             return (
@@ -901,7 +981,7 @@ function OwnerDashboard() {
           })}
         </div>
 
-        <div className="mt-8 rounded-2xl border border-[#EADCCE] bg-white/80 p-6 backdrop-blur">
+        <div className="mt-6 rounded-2xl border border-[#EADCCE] bg-white/80 p-6 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
@@ -934,3 +1014,9 @@ function OwnerDashboard() {
 }
 
 export default OwnerDashboard;
+
+
+
+
+
+

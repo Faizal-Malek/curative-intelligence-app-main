@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { ContentIdeaStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { withDelete, withPatch } from '@/lib/api-middleware'
+import { decreaseUserStorage } from '@/lib/storage'
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
@@ -54,6 +55,11 @@ async function handleDelete(_request: Request, context: ApiContext) {
     return NextResponse.json({ error: 'Idea not found' }, { status: 404 })
   }
 
+  // If idea has a file, reclaim storage space
+  if (idea.fileSize && idea.mediaUrl) {
+    await decreaseUserStorage(user.id, Number(idea.fileSize))
+  }
+
   await prisma.contentIdea.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }
@@ -92,7 +98,13 @@ async function handlePatch(request: Request, context: ApiContext) {
     },
   })
 
-  return NextResponse.json({ idea: updated })
+  // Convert BigInt fields to numbers for JSON serialization
+  const serializedIdea = {
+    ...updated,
+    fileSize: updated.fileSize ? Number(updated.fileSize) : null,
+  }
+
+  return NextResponse.json({ idea: serializedIdea })
 }
 
 export const DELETE = withDelete(handleDelete, {

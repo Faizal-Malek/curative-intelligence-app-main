@@ -282,10 +282,10 @@ const ActionCard = React.forwardRef<HTMLDivElement, ActionCardProps>(
             onClick={action.onClick}
             disabled={action.loading}
             className={cn(
-              'inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors duration-200',
+              'inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200',
               action.variant === 'secondary'
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
-                : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600',
+                ? 'bg-[#E9DCC9]/50 text-[#2F2626] hover:bg-[#D2B193]/20 border border-[#EADCCE]'
+                : 'bg-gradient-to-r from-[#D2B193] to-[#C4A68A] text-[#2F2626] hover:shadow-lg',
               action.loading && 'opacity-75 cursor-not-allowed'
             )}
           >
@@ -336,7 +336,7 @@ const EmptyStateCard = React.forwardRef<HTMLDivElement, EmptyStateCardProps>(
           {action && (
             <button
               onClick={action.onClick}
-              className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-[#D2B193] to-[#C4A68A] text-[#2F2626] font-semibold hover:shadow-xl transition-all duration-200"
             >
               {action.label}
             </button>

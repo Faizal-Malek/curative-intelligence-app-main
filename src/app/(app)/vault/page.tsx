@@ -8,6 +8,7 @@ import { useVaultIdeas, type VaultIdeaStatus } from "@/hooks/useVaultIdeas";
 import { useVaultTemplates, type VaultTemplate } from "@/hooks/useVaultTemplates";
 import { Lightbulb, Upload, Plus, Search, Tag, Eye, Edit2, Trash2, FileText, Layout, CalendarClock, Send } from "lucide-react";
 import { SkeletonVaultCard } from "@/components/ui/Skeleton";
+import { StorageProgressBar } from "@/components/dashboard/StorageProgressBar";
 
 const STATUS_STYLES: Record<VaultIdeaStatus, string> = {
   DRAFT: "bg-[#F3E6D6] text-[#8B6F47]",
@@ -253,6 +254,9 @@ export default function VaultPage() {
         </div>
       </header>
 
+      {/* Storage Progress Bar */}
+      <StorageProgressBar />
+
       {/* Tabs */}
       <div className="flex gap-2 border-b border-[#E9DCC9]">
         <button
@@ -374,7 +378,7 @@ export default function VaultPage() {
                       </button>
                       <button
                         onClick={() => handleOpenScheduleModal(idea.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8F4FF] text-[#1D4ED8] hover:bg-[#BFDBFE] transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E9DCC9]/70 text-[#8B6F47] hover:bg-[#D2B193] hover:text-white transition-colors"
                         aria-label="Schedule idea"
                       >
                         <CalendarClock className="h-3.5 w-3.5" />

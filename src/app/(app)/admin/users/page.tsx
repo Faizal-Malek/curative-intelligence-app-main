@@ -363,7 +363,7 @@ export default function AdminUsersPage() {
                       )}
                       <button
                         onClick={() => handleSendMessage(user)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-[#8B6F47] hover:bg-[#E9DCC9]/50 rounded-lg transition-colors"
                         title="Send Message"
                       >
                         <Mail className="h-4 w-4" />

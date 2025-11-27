@@ -64,7 +64,13 @@ async function handleGet(_request: NextRequest, context: ApiContext) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ ideas })
+    // Convert BigInt fields to numbers for JSON serialization
+    const serializedIdeas = ideas.map(idea => ({
+      ...idea,
+      fileSize: idea.fileSize ? Number(idea.fileSize) : null,
+    }))
+
+    return NextResponse.json({ ideas: serializedIdeas })
   } catch (error) {
     // If ContentIdea table doesn't exist yet, return empty array
     if (error instanceof Error && error.message.includes('ContentIdea')) {
@@ -106,7 +112,13 @@ async function handlePost(request: NextRequest, context: ApiContext) {
       },
     })
 
-    return NextResponse.json({ idea }, { status: 201 })
+    // Convert BigInt fields to numbers for JSON serialization
+    const serializedIdea = {
+      ...idea,
+      fileSize: idea.fileSize ? Number(idea.fileSize) : null,
+    }
+
+    return NextResponse.json({ idea: serializedIdea }, { status: 201 })
   } catch (error) {
     if (error instanceof Error && error.message.includes('ContentIdea')) {
       return NextResponse.json(

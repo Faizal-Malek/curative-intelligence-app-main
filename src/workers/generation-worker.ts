@@ -39,7 +39,8 @@ async function processJobRow(jobId: string) {
 }
 
 async function startPostgresWorker() {
-  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL
+  // Prefer pooled DATABASE_URL to avoid IPv6-only direct host issues
+  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL
   if (!connectionString) throw new Error('DATABASE_URL or DIRECT_URL not set')
   const client = new Client({ connectionString })
   await client.connect()

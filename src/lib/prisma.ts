@@ -1,11 +1,6 @@
 // File Path: src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
-}
-
 function withPgBouncerParam(url: string | undefined): string | undefined {
   if (!url) return url;
   // If already set, return as-is
@@ -16,8 +11,7 @@ function withPgBouncerParam(url: string | undefined): string | undefined {
 
 const overriddenUrl = withPgBouncerParam(process.env.DATABASE_URL);
 
-export const prisma =
-  global.prisma ||
+const createPrismaClient = () =>
   new PrismaClient({
     // Keep query logs opt-in to avoid noisy console output. Enable by setting PRISMA_LOG_QUERIES=1.
     log:
@@ -47,6 +41,17 @@ export const prisma =
     },
   });
 
+type PrismaClientSingleton = ReturnType<typeof createPrismaClient>;
+
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClientSingleton | undefined;
+}
+
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClientSingleton };
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
 if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
+  globalForPrisma.prisma = prisma;
 }

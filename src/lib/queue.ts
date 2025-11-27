@@ -16,8 +16,9 @@ if (QUEUE_STRATEGY === 'redis') {
   redisQueue = new Queue('generation', { connection })
 }
 
-// Use DIRECT_URL for LISTEN/NOTIFY compatibility on Supabase (bypasses PgBouncer)
-const pool = new Pool({ connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL })
+// Prefer pooled DATABASE_URL to avoid IPv6-only direct host on some networks.
+// Falls back to DIRECT_URL when DATABASE_URL is not set.
+const pool = new Pool({ connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL })
 
 export async function enqueueGenerationJob(payload: { userId: string; brandProfileId: string; batchId: string }) {
   if (QUEUE_STRATEGY === 'redis' && redisQueue) {

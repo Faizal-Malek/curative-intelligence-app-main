@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { User, Mail, Phone, MapPin, Building, Calendar, Camera, Save, X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/Toast";
+import { StorageProgressBar } from "@/components/dashboard/StorageProgressBar";
 
 export default function ProfilePage() {
   const { toast } = useToast();
@@ -22,6 +23,8 @@ export default function ProfilePage() {
     imageUrl: "",
     plan: "free",
     userType: "business",
+    role: "",
+    status: "",
     createdAt: "",
   });
 
@@ -38,17 +41,18 @@ export default function ProfilePage() {
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           email: data.email || "",
-          phone: "",
-          company: "",
-          location: "",
-          bio: "",
+          phone: data.phone || "",
+          company: data.company || "",
+          location: data.location || "",
+          bio: data.bio || "",
           imageUrl: data.imageUrl || "",
           plan: data.plan || "free",
           userType: data.userType || "business",
           createdAt: data.createdAt || new Date().toISOString(),
         });
       } else {
-        const data = await response.json();
+        const payload = await response.json();
+        const data = payload.user ?? payload;
         setProfile({
           firstName: data.firstName || "",
           lastName: data.lastName || "",
@@ -60,6 +64,8 @@ export default function ProfilePage() {
           imageUrl: data.imageUrl || "",
           plan: data.plan || "free",
           userType: data.userType || "business",
+          role: data.role || "",
+          status: data.status || "",
           createdAt: data.createdAt || new Date().toISOString(),
         });
       }
@@ -108,7 +114,6 @@ export default function ProfilePage() {
     try {
       setSaving(true);
 
-      // TODO: Implement actual API call to update profile
       const response = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -124,6 +129,25 @@ export default function ProfilePage() {
       });
 
       if (!response.ok) throw new Error("Failed to update profile");
+      const payload = await response.json().catch(() => null);
+      const data = payload?.user ?? payload;
+      if (data?.email) {
+        setProfile((prev) => ({
+          ...prev,
+          firstName: data.firstName ?? prev.firstName,
+          lastName: data.lastName ?? prev.lastName,
+          phone: data.phone ?? prev.phone,
+          company: data.company ?? prev.company,
+          location: data.location ?? prev.location,
+          bio: data.bio ?? prev.bio,
+          imageUrl: data.imageUrl ?? prev.imageUrl,
+          plan: data.plan ?? prev.plan,
+          userType: data.userType ?? prev.userType,
+          role: data.role ?? prev.role,
+          status: data.status ?? prev.status,
+          createdAt: data.createdAt ?? prev.createdAt,
+        }));
+      }
 
       toast({
         title: "Success",
@@ -167,6 +191,7 @@ export default function ProfilePage() {
     month: "long",
     year: "numeric",
   });
+  const roleLabel = profile.role ? profile.role.toLowerCase().replace(/_/g, " ") : "";
 
   return (
     <div className="max-w-4xl mx-auto w-full space-y-8">
@@ -226,15 +251,58 @@ export default function ProfilePage() {
               </h2>
               <p className="text-[#6B5E5E] mt-1">{profile.email}</p>
               <div className="flex flex-wrap items-center gap-3 mt-3">
-                <span className="inline-flex items-center rounded-full bg-[#D2B193]/20 border border-[#D2B193]/30 px-4 py-1.5 text-sm font-semibold text-[#D2B193] capitalize shadow-sm">
-                  {profile.plan} Plan
-                </span>
                 <span className="flex items-center gap-1.5 text-sm text-[#6B5E5E] bg-white/60 px-3 py-1.5 rounded-full border border-gray-200">
                   <Calendar className="h-4 w-4" />
                   Member since {memberSince}
                 </span>
+                {profile.userType && (
+                  <span className="inline-flex items-center rounded-full bg-[#F7F3ED] px-3 py-1.5 text-xs font-semibold text-[#6B5E5E] uppercase tracking-wide">
+                    {profile.userType}
+                  </span>
+                )}
+                {roleLabel && (
+                  <span className="inline-flex items-center rounded-full bg-[#E9DCC9] px-3 py-1.5 text-xs font-semibold text-[#3A2F2F]">
+                    {roleLabel}
+                  </span>
+                )}
+                {profile.status && (
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                    {profile.status}
+                  </span>
+                )}
               </div>
             </div>
+          </div>
+
+          {/* Current Plan and Storage */}
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Current Plan Card */}
+            <div className="rounded-2xl border border-[#EADCCE] bg-gradient-to-br from-[#F9F5F0] to-white p-6 shadow-sm">
+              <h3 className="text-sm uppercase tracking-[0.32em] text-[#B89B7B] mb-2">Current Plan</h3>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-3xl font-bold text-[#2F2626] capitalize">{profile.plan}</span>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => window.location.href = '/pricing'}
+                  className="hover:scale-105 transition-transform"
+                >
+                  Upgrade
+                </Button>
+              </div>
+              <p className="text-sm text-[#6B5E5E]">
+                {profile.plan === 'enterprise' 
+                  ? 'Unlimited access to all features with priority support.'
+                  : profile.plan === 'pro'
+                  ? 'Advanced features with 20GB storage and priority support.'
+                  : profile.plan === 'basic'
+                  ? 'Essential features with 5GB storage.'
+                  : 'Free plan with 1GB storage. Upgrade for more features.'}
+              </p>
+            </div>
+
+            {/* Storage Card */}
+            <StorageProgressBar />
           </div>
 
           {/* Form Fields */}
@@ -340,6 +408,34 @@ export default function ProfilePage() {
                   className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white text-[#2D2424] focus:border-[#D2B193] focus:outline-none focus:ring-2 focus:ring-[#D2B193]/20"
                   placeholder="Acme Inc."
                 />
+              </div>
+            </div>
+
+            {/* Read-only metadata */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-[#2D2424] mb-2">
+                  Role
+                </label>
+                <div className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-[#6B5E5E]">
+                  {roleLabel || "—"}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#2D2424] mb-2">
+                  Status
+                </label>
+                <div className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-[#6B5E5E]">
+                  {profile.status || "—"}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#2D2424] mb-2">
+                  User Type
+                </label>
+                <div className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-[#6B5E5E]">
+                  {profile.userType || "—"}
+                </div>
               </div>
             </div>
 

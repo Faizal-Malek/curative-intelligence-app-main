@@ -12,6 +12,7 @@ import { ActivityItem } from "@/components/dashboard/ActivityItem";
 import { useDashboardStats, useUserProfile } from "@/lib/api-client";
 import { ContentVaultModal } from "@/components/dashboard/ContentVaultModal";
 import { SkeletonCard, SkeletonProfile, SkeletonHero } from "@/components/ui/Skeleton";
+import { StorageProgressBar } from "@/components/dashboard/StorageProgressBar";
 
 type DashboardStats = {
   scheduledPosts: number;
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -101,29 +103,44 @@ export default function DashboardPage() {
   const handleGenerateContent = async () => {
     setIsLoading(true);
     setError(null);
+    setStatusMessage(null);
 
     try {
-      const response = await fetch("/api/content/generate-batch", {
+      console.log('[Dashboard] Starting content generation...');
+      const response = await fetch("/api/vault/generate", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
 
+      console.log('[Dashboard] API response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Failed to start content generation." }));
-        throw new Error(
-          errorData.message || "Failed to start content generation."
-        );
+        const errorData = await response.json().catch(() => ({ message: "Failed to generate content." }));
+        console.error('[Dashboard] API error:', errorData);
+        throw new Error(errorData.error || errorData.message || "Failed to generate content.");
       }
 
-      const { batchId } = await response.json();
-      router.push(`/plan-review/${batchId}`);
+      const payload = await response.json();
+      console.log('[Dashboard] Generation result:', payload);
+      
+      const message = `Added ${payload.addedIdeas ?? 0} ideas and ${payload.addedTemplates ?? 0} templates to your vault.`;
+      console.log('[Dashboard] Setting status message:', message);
+      
+      setStatusMessage(message);
+      setIsVaultOpen(true);
+      refetchStats();
+      setIsLoading(false);
     } catch (generateError) {
-      setError(
+      console.error('[Dashboard] Generation error:', generateError);
+      const rawMessage =
         generateError instanceof Error
           ? generateError.message
-          : "An unknown error occurred."
-      );
+          : "An unknown error occurred.";
+      const friendlyMessage =
+        rawMessage && rawMessage.length > 200
+          ? "Generation failed. Please try again in a moment."
+          : rawMessage;
+      setError(friendlyMessage);
       setIsLoading(false);
     }
   };
@@ -474,10 +491,35 @@ export default function DashboardPage() {
                   </Button>
                 </div>
 
+                {statusMessage && (
+                  <div className="animate-fade-in rounded-2xl border-2 border-emerald-400 bg-gradient-to-br from-emerald-50 to-emerald-100 px-6 py-5 shadow-xl">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <svg className="h-6 w-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-emerald-900 text-lg mb-1">✨ Content Generated Successfully!</p>
+                        <p className="text-emerald-800 font-medium">{statusMessage}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {error && (
-                  <div className="animate-fade-in rounded-2xl border border-[#FEE4E2] bg-[#FEF3F2] px-4 py-3 text-sm text-[#B42318]">
-                    <p className="font-semibold">Something went wrong.</p>
-                    <p className="mt-1 leading-relaxed">{error}</p>
+                  <div className="animate-fade-in rounded-2xl border-2 border-red-400 bg-gradient-to-br from-red-50 to-red-100 px-6 py-5 shadow-xl">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <svg className="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-red-900 text-lg mb-1">⚠️ Generation Failed</p>
+                        <p className="text-red-800 font-medium">{error}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -494,7 +536,7 @@ export default function DashboardPage() {
                   <h3 className="text-sm uppercase tracking-[0.32em] text-[#B89B7B] transition-colors duration-300 group-hover:text-[#D2B193]">
                     Account Status
                   </h3>
-                  <p className="text-3xl font-semibold text-[#C49B75] transition-all duration-300 group-hover:text-[#B89B7B] group-hover:scale-105">Free</p>
+                  <p className="text-3xl font-semibold text-[#C49B75] transition-all duration-300 group-hover:text-[#B89B7B] group-hover:scale-105">{profileResponse?.user?.plan || 'Free'}</p>
                 </div>
                 <span className="rounded-full bg-gradient-to-br from-[#F3E6D6] to-[#E8D6BC] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-[#2F2626] shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
                   Upgrade
@@ -506,7 +548,7 @@ export default function DashboardPage() {
               </p>
               <Button
                 variant="secondary"
-                onClick={() => router.push("/settings")}
+                onClick={() => router.push("/pricing")}
                 className="w-full transition-all duration-300 hover:shadow-md hover:scale-105"
               >
                 <TrendingUp className="mr-2 h-4 w-4" />
@@ -514,6 +556,9 @@ export default function DashboardPage() {
               </Button>
             </div>
           </Card>
+
+          {/* Storage Progress Bar */}
+          <StorageProgressBar />
         </section>
 
         <section className="grid gap-6 md:grid-cols-3">

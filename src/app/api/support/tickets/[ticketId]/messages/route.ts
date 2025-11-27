@@ -5,13 +5,18 @@ import { prisma } from "@/lib/prisma";
 // POST /api/support/tickets/[ticketId]/messages - Send message in ticket
 export async function POST(
   request: NextRequest,
-  { params }: { params: { ticketId: string } }
+  context: { params: Promise<{ ticketId: string }> }
 ) {
   try {
     const supabase = await getSupabaseServerFromCookies();
     const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
     if (error || !supabaseUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { ticketId } = await context.params;
+    if (!ticketId) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
     const user = await prisma.user.findUnique({
@@ -23,7 +28,6 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { ticketId } = params;
     const body = await request.json();
     const { message } = body;
 

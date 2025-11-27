@@ -22,11 +22,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Ensure user exists in database
-    const user = await ensureUserBySupabase(
+    const ensured = await ensureUserBySupabase(
       supabaseUser.id,
       supabaseUser.email ?? null,
       extractProfileFromSupabaseUser(supabaseUser)
     );
+
+    if (!ensured) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Fetch full profile with editable fields
+    const user = await prisma.user.findUnique({
+      where: { id: ensured.id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        imageUrl: true,
+        plan: true,
+        userType: true,
+        role: true,
+        status: true,
+        allowedNavigation: true,
+        onboardingComplete: true,
+        createdAt: true,
+        company: true,
+        location: true,
+        bio: true,
+        phone: true,
+      },
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -48,6 +75,10 @@ export async function GET(request: NextRequest) {
       navigation,
       onboardingComplete: user.onboardingComplete,
       createdAt: user.createdAt,
+      company: user.company,
+      location: user.location,
+      bio: user.bio,
+      phone: user.phone,
     };
 
     // Cache for 1 minute

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, MessageSquare, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 interface TicketMessage {
@@ -30,24 +30,55 @@ export default function SupportPage() {
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const cacheKey = "support_tickets_v1";
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const persistToCache = useCallback(
+    (data: SupportTicket[]) => {
+      try {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({ tickets: data, ts: Date.now() })
+        );
+      } catch (err) {
+        console.warn("Unable to cache tickets", err);
+      }
+    },
+    [cacheKey]
+  );
+
+  const hydrateFromCache = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { tickets?: SupportTicket[] };
+      if (parsed?.tickets?.length) {
+        setTickets(parsed.tickets);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.warn("Failed to read ticket cache", err);
+    }
+  }, [cacheKey]);
+
   useEffect(() => {
+    hydrateFromCache();
     fetchTickets();
     const interval = setInterval(fetchTickets, 10000); // Poll every 10 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [hydrateFromCache]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedTicket?.messages]);
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       const res = await fetch("/api/support/tickets");
       if (res.ok) {
         const data = await res.json();
         setTickets(data);
+        persistToCache(data);
         
         // Update selected ticket if it's still open
         if (selectedTicket) {
@@ -60,29 +91,60 @@ export default function SupportPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [persistToCache, selectedTicket]);
 
   const createTicket = async () => {
     if (!newTicketSubject.trim() || !newTicketMessage.trim()) return;
 
     setSending(true);
+    // Optimistic ticket stub
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTicket: SupportTicket = {
+      id: tempId,
+      subject: newTicketSubject,
+      status: "OPEN",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [
+        {
+          id: `temp-msg-${Date.now()}`,
+          senderId: "me",
+          senderName: "You",
+          isAdmin: false,
+          message: newTicketMessage,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    };
+    setTickets([optimisticTicket, ...tickets]);
+    setSelectedTicket(optimisticTicket);
+    persistToCache([optimisticTicket, ...tickets]);
+    setNewTicketSubject("");
+    setNewTicketMessage("");
+    setShowNewTicket(false);
+
     try {
       const res = await fetch("/api/support/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subject: newTicketSubject,
-          message: newTicketMessage,
+          subject: optimisticTicket.subject,
+          message: optimisticTicket.messages[0].message,
         }),
       });
 
       if (res.ok) {
         const ticket = await res.json();
-        setTickets([ticket, ...tickets]);
+        const nextTickets = [ticket, ...tickets.filter((t) => t.id !== tempId)];
+        setTickets(nextTickets);
         setSelectedTicket(ticket);
-        setNewTicketSubject("");
-        setNewTicketMessage("");
-        setShowNewTicket(false);
+        persistToCache(nextTickets);
+      } else {
+        // rollback optimistic
+        const nextTickets = tickets.filter((t) => t.id !== tempId);
+        setTickets(nextTickets);
+        setSelectedTicket(nextTickets[0] ?? null);
+        persistToCache(nextTickets);
       }
     } catch (error) {
       console.error("Failed to create ticket:", error);
@@ -95,18 +157,50 @@ export default function SupportPage() {
     if (!newMessage.trim() || !selectedTicket) return;
 
     setSending(true);
+    const tempMessage: TicketMessage = {
+      id: `temp-${Date.now()}`,
+      senderId: "me",
+      senderName: "You",
+      isAdmin: false,
+      message: newMessage,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Optimistic update
+    const optimisticTicket: SupportTicket = {
+      ...selectedTicket,
+      messages: [...selectedTicket.messages, tempMessage],
+      updatedAt: new Date().toISOString(),
+    };
+    setSelectedTicket(optimisticTicket);
+    const nextTickets = tickets.map((t) => (t.id === selectedTicket.id ? optimisticTicket : t));
+    setTickets(nextTickets);
+    persistToCache(nextTickets);
+    setNewMessage("");
+
     try {
       const res = await fetch(`/api/support/tickets/${selectedTicket.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: newMessage }),
+        body: JSON.stringify({ message: tempMessage.message }),
       });
 
       if (res.ok) {
         const updatedTicket = await res.json();
+        const mergedTickets = tickets.map((t) => (t.id === updatedTicket.id ? updatedTicket : t));
+        setTickets(mergedTickets);
         setSelectedTicket(updatedTicket);
-        setTickets(tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t));
-        setNewMessage("");
+        persistToCache(mergedTickets);
+      } else {
+        // rollback optimistic message
+        const rolledBack = {
+          ...optimisticTicket,
+          messages: optimisticTicket.messages.filter((m) => m.id !== tempMessage.id),
+        };
+        const mergedTickets = tickets.map((t) => (t.id === rolledBack.id ? rolledBack : t));
+        setTickets(mergedTickets);
+        setSelectedTicket(rolledBack);
+        persistToCache(mergedTickets);
       }
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -127,7 +221,7 @@ export default function SupportPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "OPEN": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "OPEN": return "bg-[#E9DCC9] text-[#8B6F47] border-[#D2B193]";
       case "IN_PROGRESS": return "bg-yellow-100 text-yellow-700 border-yellow-200";
       case "RESOLVED": return "bg-green-100 text-green-700 border-green-200";
       case "CLOSED": return "bg-gray-100 text-gray-700 border-gray-200";
