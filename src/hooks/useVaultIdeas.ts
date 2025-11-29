@@ -68,6 +68,21 @@ export function useVaultIdeas(options: UseVaultIdeasOptions = {}) {
     [fetchIdeas]
   )
 
+  const updateIdea = useCallback(
+    async (id: string, data: Partial<Omit<CreateIdeaPayload, 'metadata'>> & { status?: VaultIdeaStatus }) => {
+      const response = await fetch(`/api/vault/ideas/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to update idea')
+      }
+      await fetchIdeas()
+    },
+    [fetchIdeas]
+  )
+
   const deleteIdea = useCallback(
     async (id: string) => {
       const response = await fetch(`/api/vault/ideas/${id}`, { method: 'DELETE' })
@@ -88,6 +103,7 @@ export function useVaultIdeas(options: UseVaultIdeasOptions = {}) {
     count: ideaCount,
     refresh: fetchIdeas,
     createIdea,
+    updateIdea,
     deleteIdea,
   }
 }

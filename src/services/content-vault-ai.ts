@@ -124,6 +124,51 @@ async function callOpenAI(prompt: string) {
   };
 }
 
+async function callDeepSeek(prompt: string) {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    return { ideas: [] as IdeaPayload[], templates: [] as TemplatePayload[] };
+  }
+
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a concise content strategist. Respond only with valid JSON following the requested schema.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.65,
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`DeepSeek error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('DeepSeek returned no content');
+  }
+
+  const parsed = JSON.parse(content);
+  const ideas = (parsed.ideas || []) as IdeaPayload[];
+  const templates = (parsed.templates || []) as TemplatePayload[];
+  return {
+    ideas: ideas.map((idea) => ({ ...idea, provider: 'deepseek' })),
+    templates: templates.map((tpl) => ({ ...tpl, provider: 'deepseek' })),
+  };
+}
+
 async function callGemini(prompt: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   console.log('[Gemini] API Key present:', !!apiKey);
@@ -252,7 +297,7 @@ export async function generateAiVaultContent(userId: string, options: Generation
   let providerTemplates: TemplatePayload[] = [];
 
   try {
-    const [openaiResult, geminiResult] = await Promise.all([
+    const [openaiResult, geminiResult, deepSeekResult] = await Promise.all([
       callOpenAI(prompt).catch((err) => {
         logger.warn('OpenAI generation failed', { userId, error: (err as Error).message });
         return { ideas: [] as IdeaPayload[], templates: [] as TemplatePayload[] };
@@ -261,10 +306,14 @@ export async function generateAiVaultContent(userId: string, options: Generation
         logger.warn('Gemini generation failed', { userId, error: (err as Error).message });
         return { ideas: [] as IdeaPayload[], templates: [] as TemplatePayload[] };
       }),
+      callDeepSeek(prompt).catch((err) => {
+        logger.warn('DeepSeek generation failed', { userId, error: (err as Error).message });
+        return { ideas: [] as IdeaPayload[], templates: [] as TemplatePayload[] };
+      }),
     ]);
 
-    providerIdeas = [...openaiResult.ideas, ...geminiResult.ideas];
-    providerTemplates = [...openaiResult.templates, ...geminiResult.templates];
+    providerIdeas = [...openaiResult.ideas, ...geminiResult.ideas, ...deepSeekResult.ideas];
+    providerTemplates = [...openaiResult.templates, ...geminiResult.templates, ...deepSeekResult.templates];
   } catch (err) {
     logger.error('AI generation failed', { userId, error: (err as Error).message });
   }

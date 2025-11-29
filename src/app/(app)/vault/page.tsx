@@ -96,6 +96,7 @@ export default function VaultPage() {
     error: ideasError,
     count: ideaCount,
     createIdea,
+    updateIdea,
     deleteIdea,
     refresh: refreshIdeas,
   } = useVaultIdeas();
@@ -161,6 +162,32 @@ export default function VaultPage() {
       });
     }
 
+  };
+
+  const handleApproveIdea = async (id: string) => {
+    try {
+      await updateIdea(id, { status: 'READY' });
+      toast({ title: 'Idea approved', description: 'Status set to READY.', variant: 'success' });
+    } catch (err) {
+      toast({
+        title: 'Unable to approve idea',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleRejectIdea = async (id: string) => {
+    try {
+      await updateIdea(id, { status: 'ARCHIVED' });
+      toast({ title: 'Idea rejected', description: 'Moved to archived.', variant: 'default' });
+    } catch (err) {
+      toast({
+        title: 'Unable to reject idea',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
   };
 
   const handleUseTemplate = (template: VaultTemplate) => {
@@ -373,8 +400,12 @@ export default function VaultPage() {
                       </span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F7F3ED] text-[#7A6F6F] hover:bg-[#D2B193] hover:text-white transition-colors">
-                        <Edit2 className="h-3.5 w-3.5" />
+                      <button
+                        onClick={() => handleApproveIdea(idea.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                        title="Approve (Ready)"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleOpenScheduleModal(idea.id)}
@@ -382,6 +413,13 @@ export default function VaultPage() {
                         aria-label="Schedule idea"
                       >
                         <CalendarClock className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleRejectIdea(idea.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                        title="Reject (Archive)"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteIdea(idea.id)}
