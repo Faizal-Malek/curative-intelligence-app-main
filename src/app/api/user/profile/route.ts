@@ -5,6 +5,15 @@ import { prisma } from '@/lib/prisma';
 import { cache, CacheKeys, CacheTTL } from '@/lib/cache';
 import { buildNavigationConfig } from '@/lib/navigation';
 
+function sanitizeBio(bio?: string | null, fallback?: string | null) {
+  const trimmed = (bio || '').trim();
+  if (!trimmed) return (fallback || '').trim();
+  // If onboarding stored JSON/blob accidentally, hide it from display and use fallback instead
+  const looksJson = /^[\[{]/.test(trimmed);
+  if (looksJson) return (fallback || '').trim();
+  return trimmed;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await getSupabaseServerFromCookies();
@@ -59,7 +68,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Onboarding bio may live in brand profile; also use it as fallback when user.bio is json/blob
+    const brandProfile = await prisma.brandProfile.findUnique({
+      where: { userId: ensured.id },
+      select: { brandDescription: true },
+    });
+
     const navigation = buildNavigationConfig(user.allowedNavigation);
+    const cleanedBio = sanitizeBio(user.bio, brandProfile?.brandDescription ?? null);
 
     const userProfile = {
       id: user.id,
@@ -77,7 +93,7 @@ export async function GET(request: NextRequest) {
       createdAt: user.createdAt,
       company: user.company,
       location: user.location,
-      bio: user.bio,
+      bio: cleanedBio,
       phone: user.phone,
     };
 
@@ -115,6 +131,7 @@ export async function PATCH(request: NextRequest) {
     // Parse request body
     const body = await request.json();
     const { firstName, lastName, phone, company, location, bio, imageUrl } = body;
+    const cleanedBio = bio === undefined ? existingUser.bio : sanitizeBio(bio, existingUser.bio);
 
     // Update user in database
     const updatedUser = await prisma.user.update({
@@ -126,7 +143,7 @@ export async function PATCH(request: NextRequest) {
         phone: phone ?? existingUser.phone,
         company: company ?? existingUser.company,
         location: location ?? existingUser.location,
-        bio: bio ?? existingUser.bio,
+        bio: cleanedBio,
       },
     });
 
