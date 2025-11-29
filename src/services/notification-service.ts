@@ -26,7 +26,13 @@ export type ActivityAction =
   | 'CHANGE_PLAN'
   | 'GENERATE_CONTENT'
   | 'CONNECT_SOCIAL'
-  | 'DISCONNECT_SOCIAL';
+  | 'DISCONNECT_SOCIAL'
+  | 'CREATE_ROLE_CHANGE_REQUEST'
+  | 'APPROVE_ROLE_CHANGE_REQUEST'
+  | 'FINALIZE_ROLE_CHANGE_REQUEST'
+  | 'REJECT_ROLE_CHANGE_REQUEST'
+  | 'CANCEL_ROLE_CHANGE_REQUEST'
+  | 'EXPIRE_ROLE_CHANGE_REQUEST';
 
 /**
  * Create a notification for a user
@@ -328,5 +334,30 @@ export const ActivityTemplates = {
   planChanged: (targetEmail: string, newPlan: string) => ({
     action: 'CHANGE_PLAN' as ActivityAction,
     description: `Changed plan for ${targetEmail} to ${newPlan}`,
+  }),
+
+  createRoleChangeRequest: (targetEmail: string, newRole: string) => ({
+    action: 'CREATE_ROLE_CHANGE_REQUEST' as ActivityAction,
+    description: `Requested role change for ${targetEmail} to ${newRole}`,
+  }),
+  approveRoleChangeRequest: (targetEmail: string, newRole: string) => ({
+    action: 'APPROVE_ROLE_CHANGE_REQUEST' as ActivityAction,
+    description: `Approved role change for ${targetEmail} to ${newRole}`,
+  }),
+  finalizeRoleChangeRequest: (targetEmail: string, newRole: string) => ({
+    action: 'FINALIZE_ROLE_CHANGE_REQUEST' as ActivityAction,
+    description: `Finalized role change for ${targetEmail} to ${newRole}`,
+  }),
+  rejectRoleChangeRequest: (targetEmail: string, newRole: string) => ({
+    action: 'REJECT_ROLE_CHANGE_REQUEST' as ActivityAction,
+    description: `Rejected role change for ${targetEmail} to ${newRole}`,
+  }),
+  cancelRoleChangeRequest: (targetEmail: string, newRole: string) => ({
+    action: 'CANCEL_ROLE_CHANGE_REQUEST' as ActivityAction,
+    description: `Cancelled role change request for ${targetEmail} to ${newRole}`,
+  }),
+  expireRoleChangeRequest: (targetEmail: string, newRole: string) => ({
+    action: 'EXPIRE_ROLE_CHANGE_REQUEST' as ActivityAction,
+    description: `Expired role change request for ${targetEmail} to ${newRole}`,
   }),
 };

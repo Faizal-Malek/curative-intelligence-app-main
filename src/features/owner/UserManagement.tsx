@@ -21,6 +21,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ShieldCheck, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 interface User {
   id: string;
@@ -50,9 +51,17 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNavModal, setShowNavModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleRequests, setRoleRequests] = useState<any[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [newRole, setNewRole] = useState<string>('USER');
+  const [requestReason, setRequestReason] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
+    fetchRoleRequests();
+    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
@@ -68,6 +77,100 @@ export default function UserManagement() {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoleRequests = async () => {
+    try {
+      setLoadingRequests(true);
+      const res = await fetch('/api/owner/role-change-requests');
+      const data = await res.json();
+      setRoleRequests(data.requests || []);
+    } catch (e) {
+      console.error('Error fetching role change requests', e);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await fetch('/api/me');
+      if (!res.ok) return;
+      const data = await res.json();
+      setCurrentUserId(data.user?.id || null);
+    } catch (e) {
+      console.error('Error fetching current user', e);
+    }
+  };
+
+  const submitRoleChangeRequest = async () => {
+    if (!selectedUser) return;
+    try {
+      const res = await fetch('/api/owner/role-change-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: selectedUser.id, newRole, reason: requestReason || undefined })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to create request');
+      } else {
+        alert('Role change request submitted');
+        fetchRoleRequests();
+        setShowRoleModal(false);
+      }
+    } catch (e) {
+      console.error('Error submitting role change request', e);
+    }
+  };
+
+  const approveRequest = async (id: string) => {
+    try {
+      const res = await fetch(`/api/owner/role-change-requests/${id}/approve`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to approve');
+      } else {
+        fetchRoleRequests();
+        fetchUsers();
+      }
+    } catch (e) {
+      console.error('Approve error', e);
+    }
+  };
+
+  const rejectRequest = async (id: string) => {
+    const reason = prompt('Optional rejection reason:') || '';
+    try {
+      const res = await fetch(`/api/owner/role-change-requests/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to reject');
+      } else {
+        fetchRoleRequests();
+      }
+    } catch (e) {
+      console.error('Reject error', e);
+    }
+  };
+
+  const cancelRequest = async (id: string) => {
+    if (!confirm('Cancel this role change request?')) return;
+    try {
+      const res = await fetch(`/api/owner/role-change-requests/${id}/cancel`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to cancel');
+      } else {
+        fetchRoleRequests();
+      }
+    } catch (e) {
+      console.error('Cancel error', e);
     }
   };
 
@@ -248,6 +351,77 @@ export default function UserManagement() {
         </div>
       </Card>
 
+      {/* Pending Role Change Requests (uses prior negative space) */}
+      <Card className="bg-white border-slate-200 mb-6">
+        <div className="p-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center"><ShieldCheck className="h-5 w-5 mr-2 text-purple-600"/>Role Change Requests</h2>
+            <p className="text-xs text-slate-500 mt-1">Multi-owner approval required (3 approvals)</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchRoleRequests}>Refresh</Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">Target User</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">Requested By</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">New Role</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">Status</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">Approvals</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">Expires</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white text-sm">
+              {loadingRequests && (
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500">Loading requests...</td></tr>
+              )}
+              {!loadingRequests && roleRequests.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500">No pending requests</td></tr>
+              )}
+              {roleRequests.map(r => {
+                const approvals = r.approvals.filter((a: any) => a.approved && a.approverId !== r.requestedById).length;
+                const expiresLabel = r.expiresAt ? new Date(r.expiresAt) < new Date() ? 'Expired' : new Date(r.expiresAt).toLocaleDateString() : '—';
+                return (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-2">{r.targetUser.email}</td>
+                    <td className="px-4 py-2">{r.requestedBy.email}</td>
+                    <td className="px-4 py-2 font-medium">{r.newRole}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${r.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : r.status === 'APPROVED' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>{r.status}</span>
+                    </td>
+                    <td className="px-4 py-2">{approvals} / 3</td>
+                    <td className="px-4 py-2 text-xs {r.status==='CANCELLED' || (r.expiresAt && new Date(r.expiresAt) < new Date()) ? 'text-red-600' : 'text-slate-600'}">{expiresLabel}</td>
+                    <td className="px-4 py-2 space-x-2">
+                      {r.status === 'PENDING' && (
+                        <>
+                          <Button size="sm" variant="outline" className="text-green-600 border-green-300 hover:bg-green-50" onClick={() => approveRequest(r.id)} title="Approve"><ThumbsUp className="h-4 w-4"/></Button>
+                          <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => rejectRequest(r.id)} title="Reject"><ThumbsDown className="h-4 w-4"/></Button>
+                          {currentUserId && r.requestedById === currentUserId && (
+                            <Button size="sm" variant="outline" className="text-amber-700 border-amber-300 hover:bg-amber-50" onClick={() => cancelRequest(r.id)} title="Cancel Request">X</Button>
+                          )}
+                        </>
+                      )}
+                      {r.status === 'REJECTED' && r.approvals.some((a:any)=>!a.approved && a.reason) && (
+                        <details className="inline-block">
+                          <summary className="cursor-pointer text-xs text-red-600">Reasons</summary>
+                          <div className="mt-1 bg-red-50 border border-red-200 rounded p-2 max-w-xs space-y-1">
+                            {r.approvals.filter((a:any)=>!a.approved && a.reason).map((a:any)=>(
+                              <p key={a.id} className="text-xs text-red-700">• {a.reason}</p>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       {/* Users Table */}
       <Card className="bg-white border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -400,6 +574,21 @@ export default function UserManagement() {
                       >
                         <SettingsIcon className="h-4 w-4" />
                       </Button>
+                      {/* Request Role Change */}
+                      <Button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setNewRole(user.role === 'USER' ? 'ADMIN' : 'USER');
+                          setRequestReason('');
+                          setShowRoleModal(true);
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className="text-amber-700 hover:bg-amber-50 border-amber-300"
+                        title="Request Role Change"
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -415,6 +604,17 @@ export default function UserManagement() {
           user={selectedUser}
           onClose={() => setShowNavModal(false)}
           onSave={updateNavigation}
+        />
+      )}
+      {showRoleModal && selectedUser && (
+        <RoleChangeModal
+          user={selectedUser}
+          newRole={newRole}
+          setNewRole={setNewRole}
+          reason={requestReason}
+          setReason={setRequestReason}
+          onClose={() => setShowRoleModal(false)}
+          onSubmit={submitRoleChangeRequest}
         />
       )}
     </div>
@@ -482,6 +682,66 @@ function NavigationModal({
           <Button onClick={() => onSave(user.id, selectedNavigation)} className="bg-amber-500 hover:bg-amber-600">
             Save Changes
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RoleChangeModal({
+  user,
+  newRole,
+  setNewRole,
+  reason,
+  setReason,
+  onClose,
+  onSubmit,
+}: {
+  user: User;
+  newRole: string;
+  setNewRole: (r: string) => void;
+  reason: string;
+  setReason: (v: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="p-6 border-b border-slate-200">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center"><ShieldCheck className="h-5 w-5 mr-2 text-amber-600"/>Request Role Change</h2>
+          <p className="text-sm text-slate-600 mt-1">Propose a new role for {user.email}</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-1 block">New Role</label>
+            <select
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value)}
+              className="w-full border border-slate-300 rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+            >
+              <option value="USER">USER</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="OWNER">OWNER</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-1 block">Reason (optional)</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              className="w-full border border-slate-300 rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm resize-none"
+              placeholder="Why should this user have the new role?"
+            />
+          </div>
+          <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded border border-slate-200">
+            This request requires <span className="font-semibold">3 owner approvals</span>. Any rejection will close the request.
+          </div>
+        </div>
+        <div className="p-6 border-t border-slate-200 flex justify-end space-x-3">
+          <Button onClick={onClose} variant="outline">Cancel</Button>
+          <Button onClick={onSubmit} className="bg-amber-500 hover:bg-amber-600">Submit Request</Button>
         </div>
       </div>
     </div>

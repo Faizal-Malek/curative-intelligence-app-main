@@ -42,12 +42,14 @@ export default function ProfilePage() {
           lastName: data.lastName || "",
           email: data.email || "",
           phone: data.phone || "",
-          company: data.company || "",
+            company: data.company || "",
           location: data.location || "",
           bio: data.bio || "",
           imageUrl: data.imageUrl || "",
           plan: data.plan || "free",
           userType: data.userType || "business",
+          role: data.role || "",
+          status: data.status || "",
           createdAt: data.createdAt || new Date().toISOString(),
         });
       } else {
