@@ -44,6 +44,9 @@ async function handlePost(req: NextRequest, context: ApiContext) {
       create: { requestId: request.id, approverId: requester.id, approved: true }
     });
 
+    const activeOwners = await db.user.findMany({ where: { role: 'OWNER', status: 'ACTIVE' }, select: { id: true } });
+    const otherOwners = activeOwners.filter((o: any) => o.id !== request.requestedById);
+
     // Audit log for approval
     await logActivity({
       userId: requester.id,
@@ -54,7 +57,8 @@ async function handlePost(req: NextRequest, context: ApiContext) {
     // Re-fetch approvals
     const approvals: any[] = await db.roleChangeApproval.findMany({ where: { requestId: request.id, approved: true } });
     const distinctApprovals = approvals.filter((a: any) => a.approverId !== request.requestedById);
-    if (distinctApprovals.length >= APPROVAL_THRESHOLD) {
+    const requiredApprovals = Math.min(APPROVAL_THRESHOLD, otherOwners.length);
+    if (requiredApprovals === 0 || distinctApprovals.length >= requiredApprovals) {
       // Finalize
       await db.$transaction([
         db.user.update({ where: { id: request.targetUserId }, data: { role: request.newRole } }),

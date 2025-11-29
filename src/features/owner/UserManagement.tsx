@@ -54,6 +54,8 @@ export default function UserManagement() {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [roleRequests, setRoleRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [approvalTarget, setApprovalTarget] = useState<number>(3);
+  const [activeOwnerCount, setActiveOwnerCount] = useState<number>(0);
   const [newRole, setNewRole] = useState<string>('USER');
   const [requestReason, setRequestReason] = useState<string>('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -86,6 +88,8 @@ export default function UserManagement() {
       const res = await fetch('/api/owner/role-change-requests');
       const data = await res.json();
       setRoleRequests(data.requests || []);
+      setApprovalTarget(typeof data.approvalTarget === 'number' ? data.approvalTarget : 3);
+      setActiveOwnerCount(typeof data.activeOwnerCount === 'number' ? data.activeOwnerCount : 0);
     } catch (e) {
       console.error('Error fetching role change requests', e);
     } finally {
@@ -112,14 +116,16 @@ export default function UserManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId: selectedUser.id, newRole, reason: requestReason || undefined })
       });
+      const payload = await res.json();
       if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || 'Failed to create request');
-      } else {
-        alert('Role change request submitted');
-        fetchRoleRequests();
-        setShowRoleModal(false);
+        alert(payload?.error || 'Failed to create request');
+        return;
       }
+
+      const autoApproved = payload?.autoApproved === true || (payload?.requiredApprovals === 0);
+      alert(autoApproved ? 'Role updated immediately (only one active owner).' : 'Role change request submitted');
+      fetchRoleRequests();
+      setShowRoleModal(false);
     } catch (e) {
       console.error('Error submitting role change request', e);
     }
@@ -356,7 +362,11 @@ export default function UserManagement() {
         <div className="p-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 flex items-center"><ShieldCheck className="h-5 w-5 mr-2 text-purple-600"/>Role Change Requests</h2>
-            <p className="text-xs text-slate-500 mt-1">Multi-owner approval required (3 approvals)</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {approvalTarget === 0
+                ? 'Role changes auto-approve when you are the only active owner.'
+                : `Multi-owner approval required (${approvalTarget} approval${approvalTarget === 1 ? '' : 's'})`}
+            </p>
           </div>
           <Button variant="outline" size="sm" onClick={fetchRoleRequests}>Refresh</Button>
         </div>
@@ -382,7 +392,9 @@ export default function UserManagement() {
               )}
               {roleRequests.map(r => {
                 const approvals = r.approvals.filter((a: any) => a.approved && a.approverId !== r.requestedById).length;
-                const expiresLabel = r.expiresAt ? new Date(r.expiresAt) < new Date() ? 'Expired' : new Date(r.expiresAt).toLocaleDateString() : '—';
+                const requiredApprovals = typeof r.requiredApprovals === 'number' ? r.requiredApprovals : approvalTarget;
+                const approvalsLabel = requiredApprovals === 0 ? 'Auto' : `${approvals} / ${requiredApprovals}`;
+                const expiresLabel = r.expiresAt ? new Date(r.expiresAt) < new Date() ? 'Expired' : new Date(r.expiresAt).toLocaleDateString() : '-';
                 return (
                   <tr key={r.id} className="hover:bg-slate-50">
                     <td className="px-4 py-2">{r.targetUser.email}</td>
@@ -391,8 +403,8 @@ export default function UserManagement() {
                     <td className="px-4 py-2">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${r.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : r.status === 'APPROVED' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>{r.status}</span>
                     </td>
-                    <td className="px-4 py-2">{approvals} / 3</td>
-                    <td className="px-4 py-2 text-xs {r.status==='CANCELLED' || (r.expiresAt && new Date(r.expiresAt) < new Date()) ? 'text-red-600' : 'text-slate-600'}">{expiresLabel}</td>
+                    <td className="px-4 py-2">{approvalsLabel}</td>
+                    <td className={`px-4 py-2 text-xs ${r.status === 'CANCELLED' || (r.expiresAt && new Date(r.expiresAt) < new Date()) ? 'text-red-600' : 'text-slate-600'}`}>{expiresLabel}</td>
                     <td className="px-4 py-2 space-x-2">
                       {r.status === 'PENDING' && (
                         <>
@@ -614,6 +626,8 @@ export default function UserManagement() {
           reason={requestReason}
           setReason={setRequestReason}
           onClose={() => setShowRoleModal(false)}
+          approvalTarget={approvalTarget}
+          activeOwnerCount={activeOwnerCount}
           onSubmit={submitRoleChangeRequest}
         />
       )}
@@ -695,6 +709,8 @@ function RoleChangeModal({
   reason,
   setReason,
   onClose,
+  approvalTarget,
+  activeOwnerCount,
   onSubmit,
 }: {
   user: User;
@@ -703,6 +719,8 @@ function RoleChangeModal({
   reason: string;
   setReason: (v: string) => void;
   onClose: () => void;
+  approvalTarget: number;
+  activeOwnerCount: number;
   onSubmit: () => void;
 }) {
   return (
@@ -736,7 +754,18 @@ function RoleChangeModal({
             />
           </div>
           <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded border border-slate-200">
-            This request requires <span className="font-semibold">3 owner approvals</span>. Any rejection will close the request.
+            {approvalTarget === 0 ? (
+              <>
+                You are the only active owner, so this change will be applied immediately.
+              </>
+            ) : (
+              <>
+                This request requires <span className="font-semibold">{approvalTarget} owner approval{approvalTarget === 1 ? '' : 's'}</span>. Any rejection will close the request.
+                {activeOwnerCount > 0 && (
+                  <span className="ml-1">(active owners: {activeOwnerCount})</span>
+                )}
+              </>
+            )}
           </div>
         </div>
         <div className="p-6 border-t border-slate-200 flex justify-end space-x-3">
