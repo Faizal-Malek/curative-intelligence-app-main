@@ -27,7 +27,7 @@ export default function ProfilePage() {
     status: "",
     createdAt: "",
   });
-
+  //doing this to avoid change the user commit into github 
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
