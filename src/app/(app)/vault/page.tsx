@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/Toast";
 import { useVaultIdeas, type VaultIdeaStatus } from "@/hooks/useVaultIdeas";
 import { useVaultTemplates, type VaultTemplate } from "@/hooks/useVaultTemplates";
-import { Lightbulb, Upload, Plus, Search, Tag, Eye, Edit2, Trash2, FileText, Layout, CalendarClock, Send } from "lucide-react";
+import { Lightbulb, Upload, Plus, Search, Tag, Eye, Edit2, Trash2, FileText, Layout, CalendarClock, Send, CheckCircle2, XCircle } from "lucide-react";
 import { SkeletonVaultCard } from "@/components/ui/Skeleton";
 import { StorageProgressBar } from "@/components/dashboard/StorageProgressBar";
 

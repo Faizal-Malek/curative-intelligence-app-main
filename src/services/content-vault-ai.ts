@@ -36,6 +36,21 @@ const DEFAULT_TEMPLATE_LIMIT = 3;
 
 const normalizeTitle = (title?: string | null) => (title ?? '').trim().toLowerCase();
 
+function uniqueTitle(base: string, seen: Set<string>) {
+  const cleaned = base?.trim() || 'Idea';
+  let candidate = cleaned;
+  let counter = 2;
+  while (seen.has(normalizeTitle(candidate)) && counter < 50) {
+    candidate = `${cleaned} (${counter})`;
+    counter += 1;
+  }
+  if (seen.has(normalizeTitle(candidate))) {
+    candidate = `${cleaned} ${Math.random().toString(36).slice(2, 6)}`;
+  }
+  seen.add(normalizeTitle(candidate));
+  return candidate;
+}
+
 const isValidStatus = (status?: string): status is ContentIdeaStatus =>
   status === ContentIdeaStatus.DRAFT ||
   status === ContentIdeaStatus.READY ||
@@ -210,10 +225,11 @@ function sanitizeIdeas(raw: IdeaPayload[], seen: Set<string>, limit: number) {
 
   for (const idea of raw) {
     const key = normalizeTitle(idea.title);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
+    if (!key) continue;
+    const title = seen.has(key) ? uniqueTitle(idea.title || 'Idea', seen) : (idea.title?.trim() || 'Untitled idea');
+    seen.add(normalizeTitle(title));
     result.push({
-      title: idea.title?.trim() || 'Untitled idea',
+      title,
       content: idea.content?.trim() || '',
       tags: (idea.tags || []).slice(0, 6).filter(Boolean),
       status: isValidStatus(idea.status) ? idea.status : ContentIdeaStatus.DRAFT,
@@ -243,6 +259,33 @@ function sanitizeTemplates(raw: TemplatePayload[], seen: Set<string>, limit: num
   }
 
   return result;
+}
+
+function buildFallbackIdeas(count: number, seen: Set<string>, profile: { brandName?: string | null; primaryGoal?: string | null; industry?: string | null; }) {
+  const ideas: IdeaPayload[] = [];
+  const brand = profile.brandName || 'Your brand';
+  const goal = profile.primaryGoal || 'brand awareness';
+  const industry = profile.industry || 'your market';
+  const seeds = [
+    `${brand} ${goal} update`,
+    `${brand} customer proof`,
+    `${brand} behind the scenes`,
+    `${brand} ${industry} myth busting`,
+    `${brand} quick win tips`,
+  ];
+
+  for (let i = 0; i < count; i++) {
+    const base = seeds[i % seeds.length];
+    const title = uniqueTitle(base, seen);
+    ideas.push({
+      title,
+      content: `Share a concise take on ${goal} for ${industry}. Include one metric, one lesson, and a CTA.`,
+      tags: [goal.replace(/\s+/g, '_'), industry.replace(/\s+/g, '_'), 'update'].slice(0, 3),
+      status: ContentIdeaStatus.DRAFT,
+      provider: 'fallback',
+    });
+  }
+  return ideas;
 }
 
 export async function generateAiVaultContent(userId: string, options: GenerationOptions = {}): Promise<GenerationResult> {
@@ -325,7 +368,18 @@ export async function generateAiVaultContent(userId: string, options: Generation
   let dedupedTemplates = sanitizeTemplates(providerTemplates, templateSeen, templateLimit);
 
   // If AI returned nothing usable, backfill with safe defaults so the vault is never empty.
-  if (dedupedIdeas.length === 0) {
+  if (dedupedIdeas.length < ideaLimit) {
+    // Top up with fallbacks to guarantee fresh entries each run
+    const needed = ideaLimit - dedupedIdeas.length;
+    const fallbackIdeas = buildFallbackIdeas(needed, ideaSeen, {
+      brandName: profile.brandName,
+      primaryGoal: profile.primaryGoal,
+      industry: profile.industry,
+    });
+    dedupedIdeas = dedupedIdeas.concat(fallbackIdeas);
+  }
+
+  if (dedupedTemplates.length === 0) {
     logger.warn('AI returned no ideas; applying fallback seeds', { userId });
     const fallback = [
       {
