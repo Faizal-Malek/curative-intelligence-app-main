@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/owner/role-change-requests/process-expired",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
